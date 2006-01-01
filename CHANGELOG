@@ -9,6 +9,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
 * Added a check for unknown options.  Exceptions will now be thrown for them.
 * Added built-in and custom data converters.  Built-in handle numbers and dates.
 * Added Array#to_csv and String#parse_csv.  Both accept normal options.
+* Project moved to RubyForge Subversion.
 
 == 0.1.4
 

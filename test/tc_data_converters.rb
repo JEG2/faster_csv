@@ -60,7 +60,7 @@ class TestDataConverters < Test::Unit::TestCase
   
   def test_convert_with_builtin
     # setup parser...
-    assert(@parser.respond_to? :convert)
+    assert(@parser.respond_to?(:convert))
     assert_nothing_raised(Exception) { @parser.convert(:integer) }
     
     # and use

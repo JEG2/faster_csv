@@ -4,9 +4,6 @@ The following is a list of planned expansions for FasterCSV, in no particular
 order.
 
 * Add support for accessing fields by headers (from first row of document).
-* Add "convertors" for switching numbers to Integers or Floats, dates to Date or
-  Time objects, etc.
-* Add Array#to_csv and String#parse_csv.
 * Find a good headers solution for data like this:
     "Experiment ID:	1",,,,,,,,,,,,
     "Subject ID:	1013938829432171e868c340.
