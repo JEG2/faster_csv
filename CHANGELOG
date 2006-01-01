@@ -1,0 +1,36 @@
+= Change Log
+
+Below is a complete listing of changes for each revision of FasterCSV.
+
+== 0.1.6
+
+* Began using a forked development/stable versioning system.
+* Reorganized initialization code for easier additions and maintenance.
+* Added a check for unknown options.  Exceptions will now be thrown for them.
+* Added built-in and custom data converters.  Built-in handle numbers and dates.
+* Added Array#to_csv and String#parse_csv.  Both accept normal options.
+
+== 0.1.4
+
+* Fixed <tt>:col_sep</tt> escaping bug (reported by Kev Jackson).
+* Switched to the use of named parsers internally.
+
+== 0.1.3
+
+* Fixed typo in gem spec causing a require bug.
+
+== 0.1.2
+
+* Built gem with Ruby 1.8.2, to bypass YAML/RubyGems issue.
+
+== 0.1.1
+
+* Built gem with Ruby 1.8.4 Preview 1, to _try_ and bypass YAML/RubyGems issue.
+* Added missing test file to released packages.
+* Clarified call-seq documentation for open() and parse().
+* Clarified passed String positions for new(), in documentation.
+* Expanded generate() to handle appending to an existing String.
+
+== 0.1.0
+
+* Initial public release.

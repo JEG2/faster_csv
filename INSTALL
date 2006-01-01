@@ -1,0 +1,23 @@
+= Installing FasterCSV
+
+RubyGems is the preferred easy install method for FasterCSV.  However, you can
+install FasterCSV manually as described below.
+
+== Installing the Gem
+
+FasterCSV is intended to be installed via the
+RubyGems[http://rubyforge.org/projects/rubygems/] system.  To get the latest
+version, simply enter the following into your command prompt:
+
+	$ sudo gem install fastercsv
+
+You must have RubyGems[http://rubyforge.org/projects/rubygems/] installed for
+the above to work.
+
+== Installing Manually
+
+Download the latest version of FasterCSV from the
+{RubyForge project page}[http://rubyforge.org/frs/?group_id=1102].  Navigate to
+the root project directory and enter:
+
+	$ sudo ruby setup.rb
