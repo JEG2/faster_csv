@@ -110,8 +110,8 @@ class TestCSVParsing < Test::Unit::TestCase
   end
   
   def test_malformed_csv
-    assert_raise(FasterCSV::MalformedCSVError) do 
-      FasterCSV.parse_line("1,2\r,3")
+    assert_raise(FasterCSV::MalformedCSVError) do
+      FasterCSV.parse_line("1,2\r,3", :row_sep => "\n")
     end
 
     assert_raise(FasterCSV::MalformedCSVError) do 

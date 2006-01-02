@@ -49,6 +49,18 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
                                         :row_sep => "\r\n") )
   end
   
+  def test_row_sep_auto_discovery
+    ["\r\n", "\n", "\r"].each do |line_end|
+      data       = "1,2,3#{line_end}4,5#{line_end}"
+      discovered = FasterCSV.new(data).instance_eval { @row_sep }
+      assert_equal(line_end, discovered)
+    end
+    
+    assert_equal("\n", FasterCSV.new("\n\r\n\r").instance_eval { @row_sep })
+    
+    assert_equal($/, FasterCSV.new("").instance_eval { @row_sep })
+  end
+  
   def test_unknown_options
     assert_raise(ArgumentError) do 
       FasterCSV.new(String.new, :unknown => :error)

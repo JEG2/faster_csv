@@ -10,6 +10,8 @@ Below is a complete listing of changes for each revision of FasterCSV.
 * Added built-in and custom data converters.  Built-in handle numbers and dates.
 * Added Array#to_csv and String#parse_csv.  Both accept normal options.
 * Project moved to RubyForge Subversion.
+* Adding auto-discovery for <tt>:row_sep</tt> (now the default).
+* Added FasterCSV::filter() for easy Unix-like CSV filters.
 
 == 0.1.4
 

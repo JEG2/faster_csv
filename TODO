@@ -28,6 +28,4 @@ order.
     ### and a new block starts
     "Experiment ID:	3",,,,,,,,,,,,0.92
     ....
-* Add FasterCSV.filter().
 * Add calculated fields.
-* Add a mode to auto-detect line endings.

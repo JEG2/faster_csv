@@ -138,4 +138,20 @@ class TestFasterCSVInterface < Test::Unit::TestCase
 
     test_shift
   end
+  
+  ### Test Read and Write Interface ###
+  
+  def test_filter
+    assert_respond_to(FasterCSV, :filter)
+    
+    expected = [[1, 2, 3], [4, 5]]
+    FasterCSV.filter( "1;2;3\n4;5\n", (result = String.new),
+                      :in_col_sep => ";", :out_col_sep => ",",
+                      :converters => :all ) do |row|
+      assert_equal(row, expected.shift)
+      row.map! { |n| n * 2 }
+      row << "Added\r"
+    end
+    assert_equal("2,4,6,\"Added\r\"\n8,10,\"Added\r\"\n", result)
+  end
 end

@@ -112,10 +112,58 @@ class FasterCSV
   # The options used when no overrides are given by calling code.  They are:
   # 
   # <b><tt>:col_sep</tt></b>::     <tt>","</tt>
-  # <b><tt>:row_sep</tt></b>::     <tt>$/</tt>
+  # <b><tt>:row_sep</tt></b>::     <tt>:auto</tt>
   # <b><tt>:converters</tt></b>::  <tt>nil</tt>
   # 
-  DEFAULT_OPTIONS = {:col_sep => ",", :row_sep => $/, :converters => nil}
+  DEFAULT_OPTIONS = {:col_sep => ",", :row_sep => :auto, :converters => nil}
+  
+  # 
+  # :call-seq:
+  #   filter( options = Hash.new ) { |row| ... }
+  #   filter( input, options = Hash.new ) { |row| ... }
+  #   filter( input, output, options = Hash.new ) { |row| ... }
+  # 
+  # This method is a convenience for building Unix-like filters for CSV data.
+  # Each row is yielded to the provided block which can alter it as needed.  
+  # After the block returns, the row is appended to _output_ altered or not.
+  # 
+  # The _input_ and _output_ arguments can be anything FasterCSV::new() accepts
+  # (generally String or IO objects).  If not given, they default to 
+  # <tt>$stdin</tt> and <tt>$stdout</tt>.
+  # 
+  # The _options_ parameter is also filtered down to FasterCSV::new() after some
+  # clever key parsing.  Any key beginning with <tt>:in_</tt> or 
+  # <tt>:input_</tt> will have that leading identifier stripped and will only
+  # be used in the _options_ Hash for the _input_ object.  Keys starting with
+  # <tt>:out_</tt> or <tt>:output_</tt> affect only _output_.  All other keys 
+  # are assigned to both objects.
+  # 
+  def self.filter( *args )
+    # parse options for input, output, or both
+    input_options, output_options = Hash.new, Hash.new
+    if args.last.is_a? Hash
+      args.pop.each do |key, value|
+        case key.to_s
+        when /\Ain(?:put)?_(.+)\Z/
+          input_options[$1.to_sym] = value
+        when /\Aout(?:put)?_(.+)\Z/
+          output_options[$1.to_sym] = value
+        else
+          input_options[key]  = value
+          output_options[key] = value
+        end
+      end
+    end
+    # build input and output wrappers
+    input   = FasterCSV.new(args.shift || $stdin,  input_options)
+    output  = FasterCSV.new(args.shift || $stdout, output_options)
+    
+    # read, yield, write
+    input.each do |row|
+      yield row
+      output << row
+    end
+  end
   
   # 
   # This method is intended as the primary interface for reading CSV files.  You
@@ -300,6 +348,19 @@ class FasterCSV
   # 
   # <b><tt>:col_sep</tt></b>::     The String placed between each field.
   # <b><tt>:row_sep</tt></b>::     The String appended to the end of each row.
+  #                                This can be set to the special <tt>:auto</tt>
+  #                                setting, which requests that FasterCSV 
+  #                                automatically discover this from the data.
+  #                                Auto-discovery reads ahead in the data 
+  #                                looking for the next <tt>"\r\n"</tt>, 
+  #                                <tt>"\n"</tt>, or <tt>"\r"</tt> sequence.  A
+  #                                sequence will be selected even if it occurs
+  #                                in a quoted field, assuming that you would
+  #                                have the same line endings there.  If none of
+  #                                those sequences is found, the default 
+  #                                <tt>$/</tt> is used.  Obviously, discovery 
+  #                                takes a little time.  Set manually if speed
+  #                                is important.
   # <b><tt>:converters</tt></b>::  An Array of names from the Converters Hash
   #                                and/or lambdas that handle custom conversion.
   #                                A single converter doesn't have to be in an
@@ -494,11 +555,40 @@ class FasterCSV
   
   private
   
+  # 
   # Stores the indicated separators for later use.
+  # 
+  # If auto-discovery was requested for <tt>@row_sep</tt>, this method will read
+  # ahead in the <tt>@io</tt> and try to find one.
+  # 
   def init_separators( options )
     # store the selected separators
     @col_sep = options.delete(:col_sep)
     @row_sep = options.delete(:row_sep)
+    
+    # automatically discover row separator when requested
+    saved_pos = @io.pos  # remember where we were
+    while @row_sep == :auto
+      # 
+      # if we run out of data, it's probably a single line 
+      # (use a sensible default)
+      # 
+      if @io.eof?
+        @row_sep = $/
+        break
+      end
+      
+      # read ahead a bit
+      sample =  @io.read(1024)
+      sample += @io.read(1) if sample[-1..-1] == "\r" and not @io.eof?
+      
+      # try to find a standard separator
+      if sample =~ /\r\n?|\n/
+        @row_sep = $&
+        break
+      end
+    end
+    @io.seek(saved_pos)  # reset back to the remembered position 
   end
   
   # Pre-compiles parsers and stores them by name for access during reads.
