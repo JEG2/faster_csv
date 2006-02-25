@@ -7,7 +7,7 @@
 
 require "test/unit"
 
-require "faster_csv/row"
+require "faster_csv"
 
 class TestFasterCSVRow < Test::Unit::TestCase
   def setup
@@ -41,6 +41,7 @@ class TestFasterCSVRow < Test::Unit::TestCase
   def test_field
     # by name
     assert_equal(2, @row.field("B"))
+    assert_equal(2, @row["B"])  # alias
 
     # by index
     assert_equal(3, @row.field(2))
@@ -57,6 +58,111 @@ class TestFasterCSVRow < Test::Unit::TestCase
     assert_equal(4, @row.field("A", 3))
     assert_equal(nil, @row.field("A", 4))
     assert_equal(nil, @row.field("A", 5))
+  end
+  
+  def test_set_field
+    # set field by name
+    assert_equal(100, @row["A"] = 100)
+    
+    # set field by index
+    assert_equal(300, @row[3] = 300)
+    
+    # set field by name and minimum index
+    assert_equal([:a, :b, :c], @row["A", 4] = [:a, :b, :c])
+    
+    # verify the changes
+    assert_equal( [ ["A", 100],
+                    ["B", 2],
+                    ["C", 3],
+                    ["A", 300],
+                    ["A", [:a, :b, :c]] ], @row.to_a )
+    
+    # assigning an index past the end
+    assert_equal("End", @row[10] = "End")
+    assert_equal( [ ["A", 100],
+                    ["B", 2],
+                    ["C", 3],
+                    ["A", 300],
+                    ["A", [:a, :b, :c]],
+                    [nil, nil],
+                    [nil, nil],
+                    [nil, nil],
+                    [nil, nil],
+                    [nil, nil],
+                    [nil, "End"] ], @row.to_a )
+    
+    # assigning a new field by header
+    assert_equal("New", @row[:new] = "New")
+    assert_equal( [ ["A", 100],
+                    ["B", 2],
+                    ["C", 3],
+                    ["A", 300],
+                    ["A", [:a, :b, :c]],
+                    [nil, nil],
+                    [nil, nil],
+                    [nil, nil],
+                    [nil, nil],
+                    [nil, nil],
+                    [nil, "End"],
+                    [:new, "New"] ], @row.to_a )
+  end
+  
+  def test_append
+    # add a value
+    assert_equal(@row, @row << "Value")
+    assert_equal( [ ["A", 1],
+                    ["B", 2],
+                    ["C", 3],
+                    ["A", 4],
+                    ["A", nil],
+                    [nil, "Value"] ], @row.to_a )
+    
+    # add a pair
+    assert_equal(@row, @row << %w{Header Field})
+    assert_equal( [ ["A", 1],
+                    ["B", 2],
+                    ["C", 3],
+                    ["A", 4],
+                    ["A", nil],
+                    [nil, "Value"],
+                    %w{Header Field} ], @row.to_a )
+    
+    # a pair with Hash syntax
+    assert_equal(@row, @row << {:key => :value})
+    assert_equal( [ ["A", 1],
+                    ["B", 2],
+                    ["C", 3],
+                    ["A", 4],
+                    ["A", nil],
+                    [nil, "Value"],
+                    %w{Header Field},
+                    [:key, :value] ], @row.to_a )
+    
+    # multiple fields at once
+    assert_equal(@row, @row.push(100, 200, [:last, 300]))
+    assert_equal( [ ["A", 1],
+                    ["B", 2],
+                    ["C", 3],
+                    ["A", 4],
+                    ["A", nil],
+                    [nil, "Value"],
+                    %w{Header Field},
+                    [:key, :value],
+                    [nil, 100],
+                    [nil, 200],
+                    [:last, 300] ], @row.to_a )
+  end
+  
+  def test_delete
+    # by index
+    assert_equal(["B", 2], @row.delete(1))
+
+    # by header
+    assert_equal(["C", 3], @row.delete("C"))
+    
+    # using a block
+    assert_equal(@row, @row.delete_if { |h, f| h == "A" and not f.nil? })
+    assert_equal([["A", nil]], @row.to_a)
   end
   
   def test_fields
@@ -98,7 +204,7 @@ class TestFasterCSVRow < Test::Unit::TestCase
     assert(@row.header?("A"))
     assert(@row.header?("C"))
     assert(!@row.header?("Z"))
-    assert(@row.include?("A"))
+    assert(@row.include?("A"))  # alias
     
     # fields
     assert(@row.field?(4))
@@ -120,6 +226,9 @@ class TestFasterCSVRow < Test::Unit::TestCase
       assert_equal(ary.first.first, header)
       assert_equal(ary.shift.last, field)
     end
+    
+    # verify that we can chain the call
+    assert_equal(@row, @row.each { })
   end
   
   def test_enumerable
@@ -141,5 +250,15 @@ class TestFasterCSVRow < Test::Unit::TestCase
   
   def test_to_hash
     assert_equal({"A" => nil, "B" => 2, "C" => 3}, @row.to_hash)
+  end
+  
+  def test_to_csv
+    # normal conversion
+    assert_equal("1,2,3,4,\n", @row.to_csv)
+    assert_equal("1,2,3,4,\n", @row.to_s)  # alias
+    
+    # with options
+    assert_equal( "1|2|3|4|\r\n",
+                  @row.to_csv(:col_sep => "|", :row_sep => "\r\n") )
   end
 end
