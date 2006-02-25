@@ -3,41 +3,6 @@
 The following is a list of planned expansions for FasterCSV, in no particular
 order.
 
-* Add support for accessing fields by headers (from first row of document).
-  Well, since you're going for the bells-and-whistles version, I'll let
-  you know my dream set of requirements...
-
-  	- agnostic on column order, ie., the column headers are read
-  from the 1st row
-          (seems kind of a given)
-
-  	- some easy access to the list of headers found (ie., #headers
-  returning an array)
-          so that it's easy to react if the given file is missing a
-  required column, or
-          has an unexpected/invalid column
-
-  	- some flexibility on the actual column headers, by which I
-  mean...
-
-  	   * case insensitivity (at least as an option)
-  	   * header mapping, allow for alternative names (and mapping to
-  symbols)
-
-  As an example of the last point, I'd like to be able to process a file
-  that contains account ids and email addresses. And I'd want it to work
-  with column headers of "id", "Id", "ID", and "Email", "email", and
-  "Email Address". So something like...
-
-    options = { :headers_ignorecase => true,
-                :headers_map => { "id" => :id,
-                                  "email" => :email,
-                                  "email address" => :email } }
-
-    FasterCSV.foreach("file.csv", options) do |r|
-      puts "processing id #{r[:id]} with email: #{r[:email]}"
-      ...
-    end
 * Find a good headers solution for data like this:
     "Experiment ID:	1",,,,,,,,,,,,
     "Subject ID:	1013938829432171e868c340.

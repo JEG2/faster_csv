@@ -12,6 +12,11 @@ Below is a complete listing of changes for each revision of FasterCSV.
 * Project moved to RubyForge Subversion.
 * Added auto-discovery for <tt>:row_sep</tt> (now the default).
 * Added FasterCSV::filter() for easy Unix-like CSV filters.
+* Added support for accessing fields by headers.
+  * Headers can have their own converters.
+  * Headers can be skipped or returned as needed.
+  * FasterCSV::Row allows index or header access while retaining order and
+    allowing for duplicate headers.
 
 == 0.1.4
 
