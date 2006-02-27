@@ -2,6 +2,10 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 0.1.9
+
+* Fixing the require "English" bug.
+
 == 0.1.8
 
 * Converted FasterCSV.filter() to use ARGF for input.

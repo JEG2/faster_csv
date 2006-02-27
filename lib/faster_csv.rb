@@ -8,7 +8,7 @@
 # See FasterCSV for documentation.
 
 require "forwardable"
-require "english"
+require "English"
 require "enumerator"
 require "date"
 require "stringio"

@@ -44,7 +44,7 @@ end
 
 spec = Gem::Specification.new do |spec|
 	spec.name = "fastercsv"
-	spec.version = "0.1.8"
+	spec.version = "0.1.9"
 	spec.platform = Gem::Platform::RUBY
 	spec.summary = "FasterCSV is CSV, but faster, smaller, and cleaner."
 
