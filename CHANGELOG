@@ -2,6 +2,15 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 0.1.8
+
+* Converted FasterCSV.filter() to use ARGF for input.
+* Made FasterCSV.<<() aware of FasterCSV::Row objects.
+* Switched header rows to include the unconverted headers as fields.
+* Rescued IOError when trying to auto detect a line-ending on an output stream
+  and used the default system line-ending.
+* Added FasterCSV::Row.header_row?() and FasterCSV::Row.field_row?().
+
 == 0.1.6
 
 * Began using a forked development/stable versioning system.

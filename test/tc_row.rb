@@ -34,6 +34,21 @@ class TestFasterCSVRow < Test::Unit::TestCase
     assert_equal([["A", 1], ["B", 2], ["C", nil]], row.to_a)
   end
   
+  def test_row_type
+    # field rows
+    row = FasterCSV::Row.new(%w{A B C}, [1, 2, 3])         # implicit
+    assert(!row.header_row?)
+    assert(row.field_row?)
+    row = FasterCSV::Row.new(%w{A B C}, [1, 2, 3], false)  # explicit
+    assert(!row.header_row?)
+    assert(row.field_row?)
+
+    # header row
+    row = FasterCSV::Row.new(%w{A B C}, [1, 2, 3], true)
+    assert(row.header_row?)
+    assert(!row.field_row?)
+  end
+  
   def test_headers
     assert_equal(%w{A B C A A}, @row.headers)
   end

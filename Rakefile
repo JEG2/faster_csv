@@ -44,13 +44,13 @@ end
 
 spec = Gem::Specification.new do |spec|
 	spec.name = "fastercsv"
-	spec.version = "0.1.6"
+	spec.version = "0.1.8"
 	spec.platform = Gem::Platform::RUBY
 	spec.summary = "FasterCSV is CSV, but faster, smaller, and cleaner."
 
-	spec.files = Dir.glob("{lib,test}/**/*.rb").
+	spec.files = Dir.glob("{lib,test,example}/**/*.rb").
 	                 reject { |item| item.include?(".svn") } +
-	             Dir.glob("test/**/*.csv").
+	             Dir.glob("{test,example}/**/*.csv").
 	                 reject { |item| item.include?(".svn") } +
 	                 ["Rakefile", "setup.rb"]
 	spec.test_suite_file = "test/ts_all.rb"

@@ -7,10 +7,11 @@
 # 
 # See FasterCSV for documentation.
 
-require "stringio"
 require "forwardable"
+require "english"
 require "enumerator"
 require "date"
+require "stringio"
 
 # 
 # This class provides a complete interface to CSV files and data.  It offers
@@ -81,13 +82,29 @@ class FasterCSV
     # expected to be Arrays.  If one Array is shorter than the other, it will be
     # padded with +nil+ objects.
     # 
-    def initialize( headers, fields )
+    # The optional +header_row+ parameter can be set to +true+ to indicate, via
+    # FasterCSV::Row.header_row?() and FasterCSV::Row.field_row?(), that this is
+    # a header row.  Otherwise, the row is assumes to be a field row.
+    # 
+    def initialize( headers, fields, header_row = false )
+      @header_row = header_row
+      
       # handle extra headers or fields
       @row = if headers.size > fields.size
         headers.zip(fields)
       else
         fields.zip(headers).map { |pair| pair.reverse }
       end
+    end
+    
+    # Returns +true+ if this is a header row.
+    def header_row?
+      @header_row
+    end
+    
+    # Returns +true+ if this is a field row.
+    def field_row?
+      not header_row?
     end
     
     # Returns the headers of this row.
@@ -392,38 +409,41 @@ class FasterCSV
   # 
   # This method is a convenience for building Unix-like filters for CSV data.
   # Each row is yielded to the provided block which can alter it as needed.  
-  # After the block returns, the row is appended to _output_ altered or not.
+  # After the block returns, the row is appended to +output+ altered or not.
   # 
-  # The _input_ and _output_ arguments can be anything FasterCSV::new() accepts
+  # The +input+ and +output+ arguments can be anything FasterCSV::new() accepts
   # (generally String or IO objects).  If not given, they default to 
-  # <tt>$stdin</tt> and <tt>$stdout</tt>.
+  # <tt>ARGF</tt> and <tt>STDOUT</tt>.
   # 
-  # The _options_ parameter is also filtered down to FasterCSV::new() after some
+  # The +options+ parameter is also filtered down to FasterCSV::new() after some
   # clever key parsing.  Any key beginning with <tt>:in_</tt> or 
   # <tt>:input_</tt> will have that leading identifier stripped and will only
-  # be used in the _options_ Hash for the _input_ object.  Keys starting with
-  # <tt>:out_</tt> or <tt>:output_</tt> affect only _output_.  All other keys 
+  # be used in the +options+ Hash for the +input+ object.  Keys starting with
+  # <tt>:out_</tt> or <tt>:output_</tt> affect only +output+.  All other keys 
   # are assigned to both objects.
+  # 
+  # The <tt>:output_row_sep</tt> +option+ defaults to
+  # <tt>$INPUT_RECORD_SEPARATOR</tt> (<tt>$/</tt>).
   # 
   def self.filter( *args )
     # parse options for input, output, or both
-    input_options, output_options = Hash.new, Hash.new
+    in_options, out_options = Hash.new, {:row_sep => $INPUT_RECORD_SEPARATOR}
     if args.last.is_a? Hash
       args.pop.each do |key, value|
         case key.to_s
         when /\Ain(?:put)?_(.+)\Z/
-          input_options[$1.to_sym] = value
+          in_options[$1.to_sym] = value
         when /\Aout(?:put)?_(.+)\Z/
-          output_options[$1.to_sym] = value
+          out_options[$1.to_sym] = value
         else
-          input_options[key]  = value
-          output_options[key] = value
+          in_options[key]  = value
+          out_options[key] = value
         end
       end
     end
     # build input and output wrappers
-    input   = FasterCSV.new(args.shift || $stdin,  input_options)
-    output  = FasterCSV.new(args.shift || $stdout, output_options)
+    input   = FasterCSV.new(args.shift || ARGF,   in_options)
+    output  = FasterCSV.new(args.shift || STDOUT, out_options)
     
     # read, yield, write
     input.each do |row|
@@ -480,7 +500,11 @@ class FasterCSV
   # 
   # The +options+ parameter can be anthing FasterCSV::new() understands.
   # 
+  # The <tt>:row_sep</tt> +option+ defaults to <tt>$INPUT_RECORD_SEPARATOR</tt>
+  # (<tt>$/</tt>) when calling this method.
+  # 
   def self.generate_line( row, options = Hash.new )
+    options = {:row_sep => $INPUT_RECORD_SEPARATOR}.merge(options)
     (new("", options) << row).string
   end
   
@@ -626,8 +650,13 @@ class FasterCSV
   #                                       even if it occurs in a quoted field,
   #                                       assuming that you would have the same
   #                                       line endings there.  If none of those
-  #                                       sequences is found, the default
-  #                                       <tt>$/</tt> is used.  Obviously,
+  #                                       sequences is found, +data+ is
+  #                                       <tt>ARGF</tt>, <tt>STDIN</tt>,
+  #                                       <tt>STDOUT</tt>, or <tt>STDERR</tt>,
+  #                                       or the stream is only available for
+  #                                       output, the default
+  #                                       <tt>$INPUT_RECORD_SEPARATOR</tt>
+  #                                       (<tt>$/</tt>) is used.  Obviously,
   #                                       discovery takes a little time.  Set
   #                                       manually if speed is important.
   # <b><tt>:converters</tt></b>::         An Array of names from the Converters
@@ -645,7 +674,8 @@ class FasterCSV
   #                                       swallowed.  If set to +true+, header
   #                                       rows are returned in a FasterCSV::Row
   #                                       object with identical headers and
-  #                                       fields.
+  #                                       fields (save that the fields do not go
+  #                                       through the converters).
   # <b><tt>:header_converters</tt></b>::  Identical in functionality to
   #                                       <tt>:converters</tt> save that the
   #                                       conversions are only made to header
@@ -685,12 +715,17 @@ class FasterCSV
   ### End Delegation ###
   
   # 
-  # The primary write method for wrapped Strings and IOs, +row+ (an Array) is
-  # converted to CSV and appended to the data source.
+  # The primary write method for wrapped Strings and IOs, +row+ (an Array or
+  # FasterCSV::Row) is converted to CSV and appended to the data source.  When a
+  # FasterCSV::Row is passed, only the row's fields() are appended to the
+  # output.
   # 
   # The data source must be open for writing.
   # 
   def <<( row )
+    # handle FasterCSV::Row objects
+    row = row.fields if row.is_a? self.class::Row
+    
     @io << row.map do |field|
       if field.nil?  # reverse +nil+ fields as empty unquoted fields
         ""
@@ -839,12 +874,10 @@ class FasterCSV
 
       # if parse is empty?(), we found all the fields on the line...
       if parse.empty?
-        # convert headers or fields if needed...
-        csv = convert_fields(csv) if ( header_row? and
-                                       not @header_converters.empty? ) or
-                                     not @converters.empty?
+        # convert fields if needed...
+        csv = convert_fields(csv) unless header_row? or @converters.empty?
         # parse out header rows and handle FasterCSV::Row conversions...
-        csv = parse_headers(csv)  if @use_headers
+        csv = parse_headers(csv)  if     @use_headers
         # return the results
         break csv
       end
@@ -862,7 +895,10 @@ class FasterCSV
   # Stores the indicated separators for later use.
   # 
   # If auto-discovery was requested for <tt>@row_sep</tt>, this method will read
-  # ahead in the <tt>@io</tt> and try to find one.
+  # ahead in the <tt>@io</tt> and try to find one.  <tt>ARGF</tt>,
+  # <tt>STDIN</tt>, <tt>STDOUT</tt>, <tt>STDERR</tt> and any stream open for
+  # output only with a default <tt>@row_sep</tt> of
+  # <tt>$INPUT_RECORD_SEPARATOR</tt> (<tt>$/</tt>).
   # 
   def init_separators( options )
     # store the selected separators
@@ -870,28 +906,38 @@ class FasterCSV
     @row_sep = options.delete(:row_sep)
     
     # automatically discover row separator when requested
-    saved_pos = @io.pos  # remember where we were
-    while @row_sep == :auto
-      # 
-      # if we run out of data, it's probably a single line 
-      # (use a sensible default)
-      # 
-      if @io.eof?
-        @row_sep = $/
-        break
-      end
+    if @row_sep == :auto
+      if [ARGF, STDIN, STDOUT, STDERR].include? @io
+        @row_sep = $INPUT_RECORD_SEPARATOR
+      else
+        begin
+          saved_pos = @io.pos  # remember where we were
+          while @row_sep == :auto
+            # 
+            # if we run out of data, it's probably a single line 
+            # (use a sensible default)
+            # 
+            if @io.eof?
+              @row_sep = $INPUT_RECORD_SEPARATOR
+              break
+            end
       
-      # read ahead a bit
-      sample =  @io.read(1024)
-      sample += @io.read(1) if sample[-1..-1] == "\r" and not @io.eof?
+            # read ahead a bit
+            sample =  @io.read(1024)
+            sample += @io.read(1) if sample[-1..-1] == "\r" and not @io.eof?
       
-      # try to find a standard separator
-      if sample =~ /\r\n?|\n/
-        @row_sep = $&
-        break
+            # try to find a standard separator
+            if sample =~ /\r\n?|\n/
+              @row_sep = $&
+              break
+            end
+          end
+          @io.seek(saved_pos)  # reset back to the remembered position 
+        rescue IOError  # stream not opened for reading
+          @row_sep = $INPUT_RECORD_SEPARATOR
+        end
       end
     end
-    @io.seek(saved_pos)  # reset back to the remembered position 
   end
   
   # Pre-compiles parsers and stores them by name for access during reads.
@@ -981,10 +1027,11 @@ class FasterCSV
   end
   
   # 
-  # Processes +fields+ with <tt>@converters</tt>, returning the converted field
-  # set.  Any converter that changes the field into something other than a
-  # String halts the pipeline of conversion for that field.  This is primarily
-  # an efficiency shortcut.
+  # Processes +fields+ with <tt>@converters</tt>, or <tt>@header_converters</tt>
+  # if this is a header_row?(), returning the converted field set.  Any
+  # converter that changes the field into something other than a String halts
+  # the pipeline of conversion for that field.  This is primarily an efficiency
+  # shortcut.
   # 
   def convert_fields( fields )
     converters = if header_row?  # see if we are converting headers or fields
@@ -1009,14 +1056,15 @@ class FasterCSV
   # 
   # This methods is used to turn a finished +row+ into a FasterCSV::Row.  Header
   # rows are also dealt with here, either by returning a FasterCSV::Row with
-  # identical headers and fields or by reading past them to return a field row.
-  # Headers are also saved in <tt>@headers</tt> for use in future rows.
+  # identical headers and fields (save that the fields do not go through the
+  # converters) or by reading past them to return a field row. Headers are also
+  # saved in <tt>@headers</tt> for use in future rows.
   # 
   def parse_headers( row )
     if @headers.nil?  # header row
-      @headers = row  # save
+      @headers = convert_fields(row)  # save
       if @return_headers  # return the headers
-        FasterCSV::Row.new(@headers, @headers)
+        FasterCSV::Row.new(@headers, row, true)
       else                # skip to next field row
         shift
       end

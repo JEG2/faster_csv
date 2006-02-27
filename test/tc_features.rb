@@ -59,6 +59,8 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
     assert_equal("\n", FasterCSV.new("\n\r\n\r").instance_eval { @row_sep })
     
     assert_equal($/, FasterCSV.new("").instance_eval { @row_sep })
+    
+    assert_equal($/, FasterCSV.new(STDERR).instance_eval { @row_sep })
   end
   
   def test_unknown_options

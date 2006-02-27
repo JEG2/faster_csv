@@ -56,18 +56,24 @@ class TestFasterCSVHeaders < Test::Unit::TestCase
     assert_instance_of(FasterCSV::Row, row)
     assert_equal( [%w{first first}, %w{second second}, %w{third third}],
                   row.to_a )
+    assert(row.header_row?)
+    assert(!row.field_row?)
 
     # first data row - skipping headers
     row = csv.shift
     assert_not_nil(row)
     assert_instance_of(FasterCSV::Row, row)
     assert_equal([%w{first A}, %w{second B}, %w{third C}], row.to_a)
+    assert(!row.header_row?)
+    assert(row.field_row?)
 
     # second data row
     row = csv.shift
     assert_not_nil(row)
     assert_instance_of(FasterCSV::Row, row)
     assert_equal([%w{first 1}, %w{second 2}, %w{third 3}], row.to_a)
+    assert(!row.header_row?)
+    assert(row.field_row?)
 
     # empty
     assert_nil(csv.shift)
@@ -95,7 +101,7 @@ class TestFasterCSVHeaders < Test::Unit::TestCase
                                    :converters        => :numeric,
                                    :header_converters => :symbol )
     end
-    assert_equal([[:"1", :"1"], [:"2", :"2"], [:"3", :"3"]], csv.shift.to_a)
+    assert_equal([[:"1", "1"], [:"2", "2"], [:"3", "3"]], csv.shift.to_a)
     assert_equal([[:"1", 1], [:"2", 2], [:"3", 3]], csv.shift.to_a)
     assert_nil(csv.shift)
   end

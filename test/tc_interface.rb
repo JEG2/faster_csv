@@ -137,6 +137,15 @@ class TestFasterCSVInterface < Test::Unit::TestCase
     end
 
     test_shift
+
+    # same thing using FasterCSV::Row objects
+    File.unlink(@path)
+    
+    FasterCSV.open(@path, "w", :col_sep => "\t", :row_sep => "\r\n") do |csv|
+      @expected.each { |row| csv << FasterCSV::Row.new(Array.new, row) }
+    end
+
+    test_shift
   end
   
   ### Test Read and Write Interface ###
