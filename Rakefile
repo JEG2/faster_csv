@@ -48,15 +48,16 @@ spec = Gem::Specification.new do |spec|
 	spec.platform = Gem::Platform::RUBY
 	spec.summary = "FasterCSV is CSV, but faster, smaller, and cleaner."
 
-	spec.files = Dir.glob("{lib,test,example}/**/*.rb").
+	spec.files = Dir.glob("{lib,test,examples}/**/*.rb").
 	                 reject { |item| item.include?(".svn") } +
-	             Dir.glob("{test,example}/**/*.csv").
+	             Dir.glob("{test,examples}/**/*.csv").
 	                 reject { |item| item.include?(".svn") } +
 	                 ["Rakefile", "setup.rb"]
 	spec.test_suite_file = "test/ts_all.rb"
 
 	spec.has_rdoc = true
-	spec.extra_rdoc_files = %w{README INSTALL TODO CHANGELOG LICENSE}
+	spec.extra_rdoc_files = %w{ AUTHORS COPYING README INSTALL TODO CHANGELOG
+	                            LICENSE }
 	spec.rdoc_options << "--title" << "FasterCSV Documentation" <<
 	                     "--main"  << "README"
 
