@@ -29,3 +29,5 @@ order.
     ....
 * Add calculated fields.
 * Improve test speed.
+* Document test procedure.
+* Fix Date::parse() test errors on Windows.
