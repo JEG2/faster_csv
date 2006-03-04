@@ -31,3 +31,5 @@ order.
 * Improve test speed.
 * Document test procedure.
 * Fix Date::parse() test errors on Windows.
+* It might be nice if "Unclosed Quote Error" dumped you a line number.  If it
+  is possible...
