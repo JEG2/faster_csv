@@ -113,6 +113,28 @@ class TestCSVParsing < Test::Unit::TestCase
     assert_raise(FasterCSV::MalformedCSVError) do
       FasterCSV.parse_line("1,2\r,3", :row_sep => "\n")
     end
+    
+    bad_data = <<-END_DATA.gsub(/^ +/, "")
+    line,1,abc
+    line,2,"def\nghi"
+    
+    line,4,some\rjunk
+    line,5,jkl
+    END_DATA
+    lines = bad_data.to_a
+    assert_equal(6, lines.size)
+    assert_match(/\Aline,4/, lines.find { |l| l =~ /some\rjunk/ })
+    
+    csv = FasterCSV.new(bad_data)
+    begin
+      loop do
+        assert_not_nil(csv.shift)
+        assert_send([csv.lineno, :<, 4])
+      end
+    rescue FasterCSV::MalformedCSVError
+      assert_equal( "Unquoted fields do not allow \\r or \\n (line 4).",
+                    $!.message )
+    end
 
     assert_raise(FasterCSV::MalformedCSVError) do 
       FasterCSV.parse_line('1,2,"3...')
@@ -131,10 +153,12 @@ class TestCSVParsing < Test::Unit::TestCase
     
     csv = FasterCSV.new(bad_data)
     begin
-      assert_not_nil(csv.shift)
-      assert_send([csv.lineno, :<, 4])
+      loop do
+        assert_not_nil(csv.shift)
+        assert_send([csv.lineno, :<, 4])
+      end
     rescue FasterCSV::MalformedCSVError
-      
+      assert_equal("Unclosed quoted field on line 4.", $!.message)
     end
   end
 end

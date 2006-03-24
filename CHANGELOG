@@ -9,6 +9,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
 * Worked around Date::parse bug so tests will pass on Windows.
 * Documented test procedure.
 * Made FasterCSV#lineno CSV aware.
+* Added line numbers to MalformedCSVError messages.
 
 == 0.1.9
 
