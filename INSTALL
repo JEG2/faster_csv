@@ -21,3 +21,15 @@ Download the latest version of FasterCSV from the
 the root project directory and enter:
 
 	$ sudo ruby setup.rb
+
+== Running the Tests
+
+If you would like to run FasterCSV's test suite on your system before installing
+and you have Rake installed, just issue the following command from the root of
+the project directory:
+
+  $ rake
+
+If you do not have rake, use the following command instead:
+
+  $ ruby -I lib:test test/ts_all.rb

@@ -117,5 +117,20 @@ class TestCSVParsing < Test::Unit::TestCase
     assert_raise(FasterCSV::MalformedCSVError) do 
       FasterCSV.parse_line('1,2,"3...')
     end
+    
+    bad_data = <<-END_DATA.gsub(/^ +/, "")
+    line,1,abc
+    line,2,"def\nghi"
+    
+    line,4,8'10"
+    line,5,jkl
+    END_DATA
+    lines = bad_data.to_a
+    assert_equal(6, lines.size)
+    assert_match(/\Aline,4/, lines.find { |l| l =~ /8'10"/ })
+    
+#    begin
+      
+#    rescue
   end
 end

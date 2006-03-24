@@ -6,6 +6,9 @@ Below is a complete listing of changes for each revision of FasterCSV.
 
 * Added VERSION constant.
 * Significantly improved test speed.
+* Worked around Date::parse bug so tests will pass on Windows.
+* Documented test procedure.
+* Made FasterCSV#lineno CSV aware.
 
 == 0.1.9
 

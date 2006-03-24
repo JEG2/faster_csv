@@ -544,7 +544,6 @@ class FasterCSV
   # * fsync()
   # * ioctl()
   # * isatty()
-  # * lineno()
   # * pid()
   # * pos()
   # * reopen()
@@ -704,16 +703,24 @@ class FasterCSV
     unless options.empty?
       raise ArgumentError, "Unknown options:  #{options.keys.join(', ')}."
     end
+    
+    # track our own lineno since IO gets confused about line-ends is CSV fields
+    @lineno = 0
   end
+  
+  # 
+  # The line number of the last row read from this file.  Fields with nested 
+  # line-end characters will not affect this count.
+  # 
+  attr_reader :lineno
   
   ### IO and StringIO Delegation ###
   
   extend Forwardable
   def_delegators :@io, :binmode, :close, :close_read, :close_write, :closed?,
                        :eof, :eof?, :fcntl, :fileno, :flush, :fsync, :ioctl,
-                       :isatty, :lineno, :pid, :pos, :reopen, :rewind, :seek,
-                       :stat, :string, :sync, :sync=, :tell, :to_i, :to_io,
-                       :tty?
+                       :isatty, :pid, :pos, :reopen, :rewind, :seek, :stat,
+                       :string, :sync, :sync=, :tell, :to_i, :to_io, :tty?
 
   ### End Delegation ###
   
@@ -841,7 +848,10 @@ class FasterCSV
       # I believe a blank line should be an <tt>Array.new</tt>, not 
       # CSV's <tt>[nil]</tt>
       # 
-      return Array.new if parse.empty?
+      if parse.empty?
+        @lineno += 1
+        return Array.new
+      end
 
       # 
       # shave leading empty fields if needed, because the main parser chokes 
@@ -877,6 +887,7 @@ class FasterCSV
 
       # if parse is empty?(), we found all the fields on the line...
       if parse.empty?
+        @lineno += 1
         # convert fields if needed...
         csv = convert_fields(csv) unless header_row? or @converters.empty?
         # parse out header rows and handle FasterCSV::Row conversions...
@@ -1048,7 +1059,7 @@ class FasterCSV
         field = if converter.arity == 1  # straight field converter
           converter[field]
         else                             # FieldInfo converter
-          converter[field, FieldInfo.new(index, @io.lineno)]
+          converter[field, FieldInfo.new(index, lineno)]
         end
         break unless field.is_a? String  # short-curcuit pipeline for speed
       end

@@ -28,8 +28,6 @@ order.
     "Experiment ID:	3",,,,,,,,,,,,0.92
     ....
 * Add calculated fields.
-* Document test procedure.
-* Fix Date::parse() test errors on Windows.
 * It might be nice if "Unclosed Quote Error" dumped you a line number.  If it
   is possible...
 * We've run into a requirement to be able to access the original row of a

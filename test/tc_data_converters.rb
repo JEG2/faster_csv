@@ -15,6 +15,8 @@ class TestDataConverters < Test::Unit::TestCase
     @parser = FasterCSV.new(@data)
     
     @custom = lambda { |field| field =~ /\A:(\S.*?)\s*\Z/ ? $1.to_sym : field }
+    
+    @win_safe_time_str = Time.now.strftime("%a %b %d %H:%M:%S %Y")
   end
   
   def test_builtin_integer_converter
@@ -43,7 +45,7 @@ class TestDataConverters < Test::Unit::TestCase
 
   def test_builtin_date_converter
     # does convert
-    assert_instance_of(Date, FasterCSV::Converters[:date][Time.now.to_s])
+    assert_instance_of(Date, FasterCSV::Converters[:date][@win_safe_time_str])
 
     # does not convert
     assert_instance_of(String, FasterCSV::Converters[:date]["junk"])
@@ -52,7 +54,7 @@ class TestDataConverters < Test::Unit::TestCase
   def test_builtin_date_time_converter
     # does convert
     assert_instance_of( DateTime,
-                        FasterCSV::Converters[:date_time][Time.now.to_s] )
+                        FasterCSV::Converters[:date_time][@win_safe_time_str] )
 
     # does not convert
     assert_instance_of(String, FasterCSV::Converters[:date_time]["junk"])
@@ -110,8 +112,8 @@ class TestDataConverters < Test::Unit::TestCase
 
   def test_builtin_all_nested_combo_converter
     # setup parser...
-    @data   << ",#{Time.now}"        # add a DateTime field
-    @parser =  FasterCSV.new(@data)  # reset parser
+    @data   << ",#{@win_safe_time_str}"        # add a DateTime field
+    @parser =  FasterCSV.new(@data)            # reset parser
     assert_nothing_raised(Exception) { @parser.convert(:all) }
     
     # and use
