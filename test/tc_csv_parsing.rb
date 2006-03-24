@@ -129,8 +129,12 @@ class TestCSVParsing < Test::Unit::TestCase
     assert_equal(6, lines.size)
     assert_match(/\Aline,4/, lines.find { |l| l =~ /8'10"/ })
     
-#    begin
+    csv = FasterCSV.new(bad_data)
+    begin
+      assert_not_nil(csv.shift)
+      assert_send([csv.lineno, :<, 4])
+    rescue FasterCSV::MalformedCSVError
       
-#    rescue
+    end
   end
 end
