@@ -28,7 +28,6 @@ order.
     "Experiment ID:	3",,,,,,,,,,,,0.92
     ....
 * Add calculated fields.
-* Improve test speed.
 * Document test procedure.
 * Fix Date::parse() test errors on Windows.
 * It might be nice if "Unclosed Quote Error" dumped you a line number.  If it

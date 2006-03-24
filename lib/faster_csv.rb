@@ -68,6 +68,9 @@ require "stringio"
 #   csv_array  = "CSV,String".parse_csv   # from CSV
 # 
 class FasterCSV
+  # The version of the installed library.
+  VERSION = "0.2.0".freeze
+  
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
   # fields and allows duplicates just as an Array would, but also allows you to

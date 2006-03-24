@@ -37,14 +37,17 @@ end
 
 desc "Time FasterCSV and CSV"
 task :benchmark do
+  TESTS = 6
   path = "test/test_data.csv"
-	sh %Q{time ruby -r csv -e 'CSV.foreach("#{path}") { |row| }'}
-	sh %Q{time ruby -r lib/faster_csv -e 'FasterCSV.foreach("#{path}") { |row| }'}
+	sh %Q{time ruby -r csv -e } +
+	   %Q{'#{TESTS}.times { CSV.foreach("#{path}") { |row| } }'}
+	sh %Q{time ruby -r lib/faster_csv -e } +
+	   %Q{'#{TESTS}.times { FasterCSV.foreach("#{path}") { |row| } }'}
 end
 
 spec = Gem::Specification.new do |spec|
 	spec.name = "fastercsv"
-	spec.version = "0.1.9"
+	spec.version = "0.2.0"
 	spec.platform = Gem::Platform::RUBY
 	spec.summary = "FasterCSV is CSV, but faster, smaller, and cleaner."
 

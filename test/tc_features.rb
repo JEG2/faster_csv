@@ -75,4 +75,11 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
       FasterCSV.new(String.new, :col_sep => "|")
     end
   end
+  
+  def test_version
+    assert_not_nil(FasterCSV::VERSION)
+    assert_instance_of(String, FasterCSV::VERSION)
+    assert(FasterCSV::VERSION.frozen?)
+    assert_match(/\A\d\.\d\.\d\Z/, FasterCSV::VERSION)
+  end
 end
