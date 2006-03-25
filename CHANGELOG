@@ -10,6 +10,9 @@ Below is a complete listing of changes for each revision of FasterCSV.
 * Documented test procedure.
 * Made FasterCSV#lineno CSV aware.
 * Added line numbers to MalformedCSVError messages.
+* :headers can now be set to an Array of headers to use.
+* :headers can now be set to an external CSV String of headers to use.
+* Added an :unconvered_fields options, so those can be returned as well.
 
 == 0.1.9
 

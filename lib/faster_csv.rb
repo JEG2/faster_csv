@@ -665,10 +665,24 @@ class FasterCSV
   #                                       Hash and/or lambdas that handle custom
   #                                       conversion.  A single converter
   #                                       doesn't have to be in an Array.
+  # <b><tt>:unconverted_fields</tt></b>:: If set to +true+, an
+  #                                       unconverted_fields() method will be
+  #                                       added to all returned rows (Array or
+  #                                       FasterCSV::Row) that will return the
+  #                                       fields as they were before convertion.
+  #                                       Note that <tt>:headers</tt> supplied
+  #                                       by Array or String were not fields of
+  #                                       the document and thus will have an
+  #                                       empty Array attached.
   # <b><tt>:headers</tt></b>::            If set to <tt>:first_row</tt> or 
   #                                       +true+, the initial row of the CSV
   #                                       file will be treated as a row of
-  #                                       headers.  This setting causes
+  #                                       headers.  If set to an Array, the
+  #                                       contents will be used as the headers.
+  #                                       If set to a String, the String is run
+  #                                       through a call of
+  #                                       FasterCSV::parse_line() to produce an
+  #                                       Array of headers.  This setting causes
   #                                       FasterCSV.shift() to return rows as
   #                                       FasterCSV::Row objects instead of
   #                                       Arrays.
@@ -830,6 +844,22 @@ class FasterCSV
   # The data source must be open for reading.
   # 
   def shift
+    #########################################################################
+    ### This method is purposefully kept a bit long as simple conditional ###
+    ### checks are faster than numerous (expensive) method calls.         ###
+    #########################################################################
+    
+    headers = header_row?  # cache test so we only have to do it once
+    # handle headers not based on document content
+    if headers and @return_headers and
+       [Array, String].include? @use_headers.class
+       if @unconverted_fields
+         return add_unconverted_fields(parse_headers, Array.new)
+       else
+         return parse_headers
+       end
+    end
+    
     # begin with a blank line, so we can always add to it
     line = ""
 
@@ -850,7 +880,11 @@ class FasterCSV
       # 
       if parse.empty?
         @lineno += 1
-        return Array.new
+        if @unconverted_fields
+          return add_unconverted_fields(Array.new, Array.new)
+        else
+          return Array.new
+        end
       end
 
       # 
@@ -889,10 +923,20 @@ class FasterCSV
       # if parse is empty?(), we found all the fields on the line...
       if parse.empty?
         @lineno += 1
-        # convert fields if needed...
-        csv = convert_fields(csv) unless header_row? or @converters.empty?
+
+        # save fields unconverted fields, if needed...
+        unconverted = csv.dup if @unconverted_fields
+
+        # convert fields, if needed...
+        csv = convert_fields(csv) unless headers or @converters.empty?
         # parse out header rows and handle FasterCSV::Row conversions...
         csv = parse_headers(csv)  if     @use_headers
+
+        # inject unconverted fields and accessor, if requested...
+        if @unconverted_fields and not csv.respond_to? :unconverted_fields
+          add_unconverted_fields(csv, unconverted)
+        end
+
         # return the results
         break csv
       end
@@ -983,7 +1027,14 @@ class FasterCSV
   # are set.  When +field_name+ is <tt>:header_converters</tt> header converters
   # are added instead.
   # 
+  # The <tt>:unconverted_fields</tt> option is also actived for 
+  # <tt>:converters</tt> calls, if requested.
+  # 
   def init_converters( options, field_name = :converters )
+    if field_name == :converters
+      @unconverted_fields = options.delete(:unconverted_fields)
+    end
+
     instance_variable_set("@#{field_name}", Array.new)
     
     # find the correct method to add the coverters
@@ -1013,6 +1064,7 @@ class FasterCSV
     @use_headers    = options.delete(:headers)
     @return_headers = options.delete(:return_headers)
 
+    # headers must be delayed until shift(), in case they need a row of content
     @headers = nil
     
     init_converters(options, :header_converters)
@@ -1045,17 +1097,14 @@ class FasterCSV
   
   # 
   # Processes +fields+ with <tt>@converters</tt>, or <tt>@header_converters</tt>
-  # if this is a header_row?(), returning the converted field set.  Any
+  # if +headers+ is passed as +true+, returning the converted field set.  Any
   # converter that changes the field into something other than a String halts
   # the pipeline of conversion for that field.  This is primarily an efficiency
   # shortcut.
   # 
-  def convert_fields( fields )
-    converters = if header_row?  # see if we are converting headers or fields
-      @header_converters
-    else
-      @converters
-    end
+  def convert_fields( fields, headers = false )
+    # see if we are converting headers or fields
+    converters = headers ? @header_converters : @converters
     
     fields.enum_for(:each_with_index).map do |field, index|  # map_with_index
       converters.each do |converter|
@@ -1077,17 +1126,42 @@ class FasterCSV
   # converters) or by reading past them to return a field row. Headers are also
   # saved in <tt>@headers</tt> for use in future rows.
   # 
-  def parse_headers( row )
-    if @headers.nil?  # header row
-      @headers = convert_fields(row)  # save
-      if @return_headers  # return the headers
-        FasterCSV::Row.new(@headers, row, true)
-      else                # skip to next field row
-        shift
+  # When +nil+, +row+ is assumed to be a header row not based on an actual row
+  # of the stream.
+  # 
+  def parse_headers( row = nil )
+    if @headers.nil?                # header row
+      @headers = case @use_headers  # save headers
+      when Array  then @use_headers                         # Array of headers
+      when String then self.class.parse_line(@use_headers)  # CSV header String
+      else             row                                  # first row headers
       end
-    else              # field row
-      FasterCSV::Row.new(@headers, row)
+      
+      # prepare converted and unconverted copies
+      row      = @headers                       if row.nil?
+      @headers = convert_fields(@headers, true)
+      
+      if @return_headers                                     # return headers
+        return FasterCSV::Row.new(@headers, row, true)
+      elsif not [Array, String].include? @use_headers.class  # skip to field row
+        return shift
+      end
     end
+
+    FasterCSV::Row.new(@headers, row)  # field row
+  end
+  
+  # 
+  # Thiw methods injects an instance variable <tt>unconverted_fields</tt> into
+  # +row+ and an accessor method for it called unconverted_fields().  The
+  # variable is set to the contents of +fields+.
+  # 
+  def add_unconverted_fields( row, fields )
+    class << row
+      attr_reader :unconverted_fields
+    end
+    row.instance_eval { @unconverted_fields = fields }
+    row
   end
 end
 

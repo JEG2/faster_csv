@@ -43,6 +43,93 @@ class TestFasterCSVHeaders < Test::Unit::TestCase
     end
   end
   
+  def test_array_of_headers
+    # activate headers
+    csv = nil
+    assert_nothing_raised(Exception) do 
+      csv = FasterCSV.parse(@data, :headers => [:my, :new, :headers])
+    end
+
+    # first data row - skipping headers
+    row = csv.shift
+    assert_not_nil(row)
+    assert_instance_of(FasterCSV::Row, row)
+    assert_equal( [[:my, "first"], [:new, "second"], [:headers, "third"]],
+                  row.to_a )
+
+    # second data row
+    row = csv.shift
+    assert_not_nil(row)
+    assert_instance_of(FasterCSV::Row, row)
+    assert_equal([[:my, "A"], [:new, "B"], [:headers, "C"]], row.to_a)
+
+    # third data row
+    row = csv.shift
+    assert_not_nil(row)
+    assert_instance_of(FasterCSV::Row, row)
+    assert_equal([[:my, "1"], [:new, "2"], [:headers, "3"]], row.to_a)
+
+    # empty
+    assert_nil(csv.shift)
+    
+    # with return and convert
+    assert_nothing_raised(Exception) do
+      csv = FasterCSV.parse(@data, :headers           => [:my, :new, :headers],
+                                   :return_headers    => true,
+                                   :header_converters => lambda { |h| h.to_s } )
+    end
+    row = csv.shift
+    assert_not_nil(row)
+    assert_instance_of(FasterCSV::Row, row)
+    assert_equal( [["my", :my], ["new", :new], ["headers", :headers]],
+                  row.to_a )
+    assert(row.header_row?)
+    assert(!row.field_row?)
+  end
+  
+  def test_csv_header_string
+    # activate headers
+    csv = nil
+    assert_nothing_raised(Exception) do 
+      csv = FasterCSV.parse(@data, :headers => "my,new,headers")
+    end
+
+    # first data row - skipping headers
+    row = csv.shift
+    assert_not_nil(row)
+    assert_instance_of(FasterCSV::Row, row)
+    assert_equal([%w{my first}, %w{new second}, %w{headers third}], row.to_a)
+
+    # second data row
+    row = csv.shift
+    assert_not_nil(row)
+    assert_instance_of(FasterCSV::Row, row)
+    assert_equal([%w{my A}, %w{new B}, %w{headers C}], row.to_a)
+
+    # third data row
+    row = csv.shift
+    assert_not_nil(row)
+    assert_instance_of(FasterCSV::Row, row)
+    assert_equal([%w{my 1}, %w{new 2}, %w{headers 3}], row.to_a)
+
+    # empty
+    assert_nil(csv.shift)
+    
+    # with return and convert
+    assert_nothing_raised(Exception) do
+      csv = FasterCSV.parse(@data, :headers           => "my,new,headers",
+                                   :return_headers    => true,
+                                   :header_converters => :symbol )
+    end
+    row = csv.shift
+    assert_not_nil(row)
+    assert_instance_of(FasterCSV::Row, row)
+    assert_equal( [[:my, "my"], [:new, "new"], [:headers, "headers"]],
+                  row.to_a )
+    assert(row.header_row?)
+    assert(!row.field_row?)
+  end
+  
   def test_return_headers
     # activate headers and request they are returned
     csv = nil

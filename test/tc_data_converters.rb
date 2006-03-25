@@ -165,4 +165,79 @@ class TestDataConverters < Test::Unit::TestCase
                   FasterCSV.parse_line( @data, :converters => [ :numeric,
                                                                 @custom ] ) )
   end
+  
+  def test_unconverted_fields
+    [ [ @data,
+        ["Numbers", :integer, 1, :float, 3.015],
+        %w{Numbers :integer 1 :float 3.015} ],
+      ["\n", Array.new, Array.new] ].each do |test, fields, unconverted|
+      row = nil
+      assert_nothing_raised(Exception) do 
+        row = FasterCSV.parse_line( test,
+                                    :converters         => [:numeric, @custom],
+                                    :unconverted_fields => true )
+      end
+      assert_not_nil(row)
+      assert_equal(fields, row)
+      assert_respond_to(row, :unconverted_fields)
+      assert_equal(unconverted, row.unconverted_fields)
+    end
+
+    data = <<-END_CSV.gsub(/^\s+/, "")
+    first,second,third
+    1,2,3
+    END_CSV
+    row = nil
+    assert_nothing_raised(Exception) do 
+      row = FasterCSV.parse_line( data,
+                                  :converters         => :numeric,
+                                  :unconverted_fields => true,
+                                  :headers            => :first_row )
+    end
+    assert_not_nil(row)
+    assert_equal([["first", 1], ["second", 2], ["third", 3]], row.to_a)
+    assert_respond_to(row, :unconverted_fields)
+    assert_equal(%w{1 2 3}, row.unconverted_fields)
+
+    assert_nothing_raised(Exception) do 
+      row = FasterCSV.parse_line( data,
+                                  :converters         => :numeric,
+                                  :unconverted_fields => true,
+                                  :headers            => :first_row,
+                                  :return_headers     => true )
+    end
+    assert_not_nil(row)
+    assert_equal( [%w{first first}, %w{second second}, %w{third third}],
+                  row.to_a )
+    assert_respond_to(row, :unconverted_fields)
+    assert_equal(%w{first second third}, row.unconverted_fields)
+
+    assert_nothing_raised(Exception) do 
+      row = FasterCSV.parse_line( data,
+                                  :converters         => :numeric,
+                                  :unconverted_fields => true,
+                                  :headers            => :first_row,
+                                  :return_headers     => true,
+                                  :header_converters  => :symbol )
+    end
+    assert_not_nil(row)
+    assert_equal( [[:first, "first"], [:second, "second"], [:third, "third"]],
+                  row.to_a )
+    assert_respond_to(row, :unconverted_fields)
+    assert_equal(%w{first second third}, row.unconverted_fields)
+
+    assert_nothing_raised(Exception) do 
+      row = FasterCSV.parse_line( data,
+                                  :converters         => :numeric,
+                                  :unconverted_fields => true,
+                                  :headers            => %w{my new headers},
+                                  :return_headers     => true,
+                                  :header_converters  => :symbol )
+    end
+    assert_not_nil(row)
+    assert_equal( [[:my, "my"], [:new, "new"], [:headers, "headers"]],
+                  row.to_a )
+    assert_respond_to(row, :unconverted_fields)
+    assert_equal(Array.new, row.unconverted_fields)
+  end
 end
