@@ -163,4 +163,86 @@ class TestFasterCSVInterface < Test::Unit::TestCase
     end
     assert_equal("2,4,6,\"Added\r\"\n8,10,\"Added\r\"\n", result)
   end
+  
+  def test_instance
+    csv = String.new
+    
+    first = nil
+    assert_nothing_raised(Exception) do 
+      first =  FasterCSV.instance(csv, :col_sep => ";")
+      first << %w{a b c}
+    end
+    
+    assert_equal("a;b;c\n", csv)
+    
+    second = nil
+    assert_nothing_raised(Exception) do 
+      second =  FasterCSV.instance(csv, :col_sep => ";")
+      second << [1, 2, 3]
+    end
+    
+    assert_equal(first.object_id, second.object_id)
+    assert_equal("a;b;c\n1;2;3\n", csv)
+    
+    # shortcuts
+    assert_equal(STDOUT, FasterCSV.instance.instance_eval { @io })
+    assert_equal(STDOUT, FasterCSV { |csv| csv.instance_eval { @io } })
+    assert_equal(STDOUT, FCSV.instance.instance_eval { @io })
+    assert_equal(STDOUT, FCSV { |csv| csv.instance_eval { @io } })
+  end
+  
+  ### Test Alternate Interface ###
+  
+  def test_csv_interface
+    require "csv"
+    data      = ["Number", 42, "Tricky Field", 'This has embedded "quotes"!']
+    data_file = File.join(File.dirname(__FILE__), "temp_csv_data.csv")
+    CSV.open(data_file, "w") { |f| 10.times { f << data } }
+    csv   = CSV.generate_line(data)
+    tests = { :foreach       => Array.new,
+              :generate_line => csv,
+              :open          => Array.new,
+              :parse         => CSV.parse(csv),
+              :parse_w_block => Array.new,
+              :parse_line    => CSV.parse_line(csv),
+              :readlines     => CSV.readlines(data_file) }
+    CSV.foreach(data_file) { |row| tests[:foreach] << row }
+    CSV.open(data_file, "r") { |row| tests[:open] << row }
+    CSV.parse(([csv] * 3).join("\n")) { |row| tests[:parse_w_block] << row }
+    Object.send(:remove_const, :CSV)
+    
+    assert_nothing_raised(Exception) do 
+      FasterCSV.build_csv_interface
+    end
+    
+    %w{ foreach
+        generate_line
+        open
+        parse
+        parse_line
+        readlines }.each do |meth|
+      assert_respond_to(::CSV, meth)
+    end
+    
+    faster_csv = Array.new
+    CSV.foreach(data_file) { |row| faster_csv << row }
+    assert_equal(tests[:foreach], faster_csv)
+    assert_equal(tests[:generate_line], CSV.generate_line(data))
+    faster_csv.clear
+    CSV.open(data_file, "r") { |row| faster_csv << row }
+    assert_equal(tests[:open], faster_csv)
+    comp_file = data_file.sub("_csv_data", "_faster_csv_data")
+    CSV.open(comp_file, "w") { |f| 10.times { f << data } }
+    assert_equal(File.read(data_file), File.read(comp_file))
+    assert_equal(tests[:parse], CSV.parse(csv))
+    faster_csv.clear
+    CSV.parse(([csv] * 3).join("\n")) { |row| faster_csv << row }
+    assert_equal(tests[:parse_w_block], faster_csv)
+    assert_equal(tests[:parse_line], CSV.parse_line(csv))
+    assert_equal(tests[:readlines], CSV.readlines(data_file))
+    
+    Object.send(:remove_const, :CSV)
+    load "csv.rb"
+    [data_file, comp_file].each { |file| File.unlink(file) }
+  end
 end

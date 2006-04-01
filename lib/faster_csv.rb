@@ -67,6 +67,12 @@ require "stringio"
 #   csv_string = ["CSV", "data"].to_csv   # to CSV
 #   csv_array  = "CSV,String".parse_csv   # from CSV
 # 
+# == Shortcut Interface
+# 
+#   FCSV            { |csv_out| csv_out << %w{my data here} }  # to STDOUT
+#   FCSV(csv = "")  { |csv_str| csv_str << %w{my data here} }  # to a String
+#   FCSV(STDERR)    { |csv_err| csv_err << %w{my data here} }  # to STDERR
+# 
 class FasterCSV
   # The version of the installed library.
   VERSION = "0.2.0".freeze
@@ -333,8 +339,9 @@ class FasterCSV
   # 
   # <b><tt>index</tt></b>::  The zero-based index of the field in its row.
   # <b><tt>line</tt></b>::   The line of the data source this row is from.
+  # <b><tt>header</tt></b>:: The header for the column, when available.
   # 
-  FieldInfo = Struct.new(:index, :line)
+  FieldInfo = Struct.new(:index, :line, :header)
   
   # 
   # This Hash holds the built-in converters of FasterCSV that can be accessed by
@@ -393,16 +400,159 @@ class FasterCSV
   # <b><tt>:col_sep</tt></b>::            <tt>","</tt>
   # <b><tt>:row_sep</tt></b>::            <tt>:auto</tt>
   # <b><tt>:converters</tt></b>::         +nil+
+  # <b><tt>:unconverted_fields</tt></b>:: +nil+
   # <b><tt>:headers</tt></b>::            +false+
   # <b><tt>:return_headers</tt></b>::     +false+
   # <b><tt>:header_converters</tt></b>::  +nil+
   # 
-  DEFAULT_OPTIONS = { :col_sep           => ",",
-                      :row_sep           => :auto,
-                      :converters        => nil,
-                      :headers           => false,
-                      :return_headers    => false,
-                      :header_converters => nil }.freeze
+  DEFAULT_OPTIONS = { :col_sep            => ",",
+                      :row_sep            => :auto,
+                      :converters         => nil,
+                      :unconverted_fields => nil,
+                      :headers            => false,
+                      :return_headers     => false,
+                      :header_converters  => nil }.freeze
+  
+  # 
+  # This method will build a drop-in replacement for many of the standard CSV
+  # methods.  It allows you to write code like:
+  # 
+  #   begin
+  #     require "faster_csv"
+  #     FasterCSV.build_csv_interface
+  #   rescue LoadError
+  #     require "csv"
+  #   end
+  #   # ... use CSV here ...
+  # 
+  # This is not a complete interface with completely identical behavior.
+  # However, it is intended to be close enough that you won't notice the
+  # difference in most cases.  CSV methods supported are:
+  # 
+  # * foreach()
+  # * generate_line()
+  # * open()
+  # * parse()
+  # * parse_line()
+  # * readlines()
+  # 
+  # Be warned that this interface is slower than vanilla FasterCSV due to the
+  # extra layer of method calls.  Depending on usage, this can slow it down to 
+  # near CSV speeds.
+  # 
+  def self.build_csv_interface
+    Object.const_set(:CSV, Class.new).class_eval do
+      def self.foreach( path, rs = :auto, &block )  # :nodoc:
+        FasterCSV.foreach(path, :row_sep => rs, &block)
+      end
+      
+      def self.generate_line( row, fs = ",", rs = "" )  # :nodoc:
+        FasterCSV.generate_line(row, :col_sep => fs, :row_sep => rs)
+      end
+      
+      def self.open( path, mode, fs = ",", rs = :auto, &block )  # :nodoc:
+        if block and mode.include? "r"
+          FasterCSV.open(path, mode, :col_sep => fs, :row_sep => rs) do |csv|
+            csv.each(&block)
+          end
+        else
+          FasterCSV.open(path, mode, :col_sep => fs, :row_sep => rs, &block)
+        end
+      end
+      
+      def self.parse( str_or_readable, fs = ",", rs = :auto, &block )  # :nodoc:
+        FasterCSV.parse(str_or_readable, :col_sep => fs, :row_sep => rs, &block)
+      end
+      
+      def self.parse_line( src, fs = ",", rs = :auto )  # :nodoc:
+        FasterCSV.parse_line(src, :col_sep => fs, :row_sep => rs)
+      end
+      
+      def self.readlines( path, rs = :auto )  # :nodoc:
+        FasterCSV.readlines(path, :row_sep => rs)
+      end
+    end
+  end
+  
+  # 
+  # This method allows you to serialize an Array of Ruby objects to a String or
+  # File of CSV data.  This is not as powerful as Marshal or YAML, but perhaps
+  # useful for spreadsheet and database interaction.
+  # 
+  # Out of the box, this method is intended to work with simple data objects or
+  # Structs.  It will serialize a list of instance variables and/or
+  # Struct.members().
+  # 
+  # If you need need more complicated serialization, you can control the process
+  # by adding methods to the class to be serialized.
+  # 
+  # A class method csv_meta() is responsible for returning the first row of the
+  # document (as an Array).  This row is considered to be a Hash of the form
+  # key_1,value_1,key_2,value_2,...  FasterCSV::load() expects to find a class
+  # key with a value of the stringified class name and FasterCSV::dump() will
+  # create this, if you do not define this method.  This method is only called
+  # on the first object of the Array.
+  # 
+  # The next method you can provide is an instance method called csv_headers().
+  # This method is expected to return the second line of the document (again as
+  # an Array), which is to be used to give each column a header.  By default,
+  # FasterCSV::load() will set an instance variable if the field header starts
+  # with an @ character or call send() passing the header as the method name and
+  # the field value as an argument.  This method is only called on the first
+  # object of the Array.
+  # 
+  # Finally, you can provide an instance method called csv_dump(), which will
+  # be passed the headers.  This should return an Array of fields that can be
+  # serialized for this object.  This method is called once for every object in
+  # the Array.
+  # 
+  # The +io+ parameter can be used to serialize to a File, and +options+ can be
+  # anything FasterCSV::new() accepts.
+  # 
+  def self.dump( ary_of_objs, io = "", options = Hash.new )
+    obj_template = ary_of_objs.first
+    
+    csv = FasterCSV.new(io, options)
+    
+    # write meta information
+    begin
+      csv << obj_template.class.csv_meta
+    rescue NoMethodError
+      csv << [:class, obj_template.class]
+    end
+
+    # write headers
+    begin
+      headers = obj_template.csv_headers
+    rescue NoMethodError
+      headers = obj_template.instance_variables.sort
+      if obj_template.class.ancestors.find { |cls| cls.to_s =~ /\AStruct\b/ }
+        headers += obj_template.members.map { |mem| "#{mem}=" }.sort
+      end
+    end
+    csv << headers
+    
+    # serialize each object
+    ary_of_objs.each do |obj|
+      begin
+        csv << obj.csv_dump(headers)
+      rescue NoMethodError
+        csv << headers.map do |var|
+          if var[0] == ?@
+            obj.instance_variable_get(var)
+          else
+            obj[var[0..-2]]
+          end
+        end
+      end
+    end
+    
+    if io.is_a? String
+      csv.string
+    else
+      csv.close
+    end
+  end
   
   # 
   # :call-seq:
@@ -509,6 +659,77 @@ class FasterCSV
   def self.generate_line( row, options = Hash.new )
     options = {:row_sep => $INPUT_RECORD_SEPARATOR}.merge(options)
     (new("", options) << row).string
+  end
+  
+  # 
+  # This method will return a FasterCSV instance, just like FasterCSV::new(), 
+  # but the instance will be cached and returned for all future calls to this 
+  # method for the same +data+ object (tested by Object#object_id()) with the
+  # same +options+
+  # 
+  # If a block is given, the instance is passed to the block and the return
+  # value becomes the return value of the block.
+  # 
+  def self.instance( data = STDOUT, options = Hash.new )
+    # create a _signature_ for this method call, data object and options
+    sig = [data.object_id] +
+          options.values_at(*DEFAULT_OPTIONS.keys.sort_by { |sym| sym.to_s })
+    
+    # fetch or create the instance for this signature
+    @@instances ||= Hash.new
+    instance    =   (@@instances[sig] ||= new(data, options))
+
+    if block_given?
+      yield instance  # run block, if given, returning result
+    else
+      instance        # or return the instance
+    end
+  end
+  
+  # 
+  # This method is the reading counterpart to FasterCSV::dump().  See that
+  # method for a detailed description of the process.
+  # 
+  # You can customize loading by adding a class method called csv_load() which 
+  # will be passed a Hash of meta information, an Array of headers, and an Array
+  # of fields for the object the method is expected to return.
+  # 
+  # Remember that all fields will be Strings after this load.  If you need
+  # something else, use +options+ to setup converters or provide a custom
+  # csv_load() implementation.
+  # 
+  def self.load( io_or_str, options = Hash.new )
+    csv = FasterCSV.new(io_or_str, options)
+    
+    # load meta information
+    meta = Hash[*csv.shift]
+    cls  = meta["class"].split("::").inject(Object) do |c, const|
+      c.const_get(const)
+    end
+    
+    # load headers
+    headers = csv.shift
+    
+    # unserialize each object stored in the file
+    results = csv.inject(Array.new) do |all, row|
+      begin
+        obj = cls.csv_load(meta, headers, row)
+      rescue NoMethodError
+        obj = cls.allocate
+        headers.zip(row) do |name, value|
+          if name[0] == ?@
+            obj.instance_variable_set(name, value)
+          else
+            obj.send(name, value)
+          end
+        end
+      end
+      all << obj
+    end
+    
+    csv.close unless io_or_str.is_a? String
+    
+    results
   end
   
   # 
@@ -849,9 +1070,8 @@ class FasterCSV
     ### checks are faster than numerous (expensive) method calls.         ###
     #########################################################################
     
-    headers = header_row?  # cache test so we only have to do it once
     # handle headers not based on document content
-    if headers and @return_headers and
+    if header_row? and @return_headers and
        [Array, String].include? @use_headers.class
        if @unconverted_fields
          return add_unconverted_fields(parse_headers, Array.new)
@@ -928,7 +1148,7 @@ class FasterCSV
         unconverted = csv.dup if @unconverted_fields
 
         # convert fields, if needed...
-        csv = convert_fields(csv) unless headers or @converters.empty?
+        csv = convert_fields(csv) unless @use_headers or @converters.empty?
         # parse out header rows and handle FasterCSV::Row conversions...
         csv = parse_headers(csv)  if     @use_headers
 
@@ -1111,7 +1331,8 @@ class FasterCSV
         field = if converter.arity == 1  # straight field converter
           converter[field]
         else                             # FieldInfo converter
-          converter[field, FieldInfo.new(index, lineno)]
+          header = @use_headers && !headers ? @headers[index] : nil
+          converter[field, FieldInfo.new(index, lineno, header)]
         end
         break unless field.is_a? String  # short-curcuit pipeline for speed
       end
@@ -1148,7 +1369,7 @@ class FasterCSV
       end
     end
 
-    FasterCSV::Row.new(@headers, row)  # field row
+    FasterCSV::Row.new(@headers, convert_fields(row))  # field row
   end
   
   # 
@@ -1163,6 +1384,19 @@ class FasterCSV
     row.instance_eval { @unconverted_fields = fields }
     row
   end
+end
+
+# Another name for FasterCSV.
+FCSV = FasterCSV
+
+# Another name for FasterCSV::instance().
+def FasterCSV( *args, &block )
+  FasterCSV.instance(*args, &block)
+end
+
+# Another name for FCSV::instance().
+def FCSV( *args, &block )
+  FCSV.instance(*args, &block)
 end
 
 class Array
