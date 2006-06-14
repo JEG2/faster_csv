@@ -2,6 +2,12 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 0.2.1
+
+* Removed autorequire from GemSpec.
+* Made Rakefile VERSION aware.
+* General Rakefile cleanup.
+
 == 0.2.0
 
 * Added VERSION constant.

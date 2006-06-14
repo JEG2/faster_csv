@@ -4,22 +4,26 @@ require "rake/gempackagetask"
 
 require "rubygems"
 
+dir     = File.dirname(__FILE__)
+lib     = File.join(dir, "lib", "faster_csv.rb")
+version = File.read(lib)[/^\s*VERSION\s*=\s*(['"])(\d\.\d\.\d)\1/, 2]
+
 task :default => [:test]
 
 Rake::TestTask.new do |test|
-	test.libs << "test"
+	test.libs       << "test"
 	test.test_files = [ "test/ts_all.rb" ]
-	test.verbose = true
+	test.verbose    = true
 end
 
 Rake::RDocTask.new do |rdoc|
-	rdoc.main = "README"
+	rdoc.main     = "README"
+	rdoc.rdoc_dir = "doc/html"
+	rdoc.title    = "FasterCSV Documentation"
 	rdoc.rdoc_files.include( "README",  "INSTALL",
 	                         "TODO",    "CHANGELOG",
 	                         "AUTHORS", "COPYING",
 	                         "LICENSE", "lib/" )
-	rdoc.rdoc_dir = "doc/html"
-	rdoc.title = "FasterCSV Documentation"
 end
 
 desc "Upload current documentation to Rubyforge"
@@ -46,32 +50,32 @@ task :benchmark do
 end
 
 spec = Gem::Specification.new do |spec|
-	spec.name = "fastercsv"
-	spec.version = "0.2.0"
+	spec.name    = "fastercsv"
+	spec.version = version
+
 	spec.platform = Gem::Platform::RUBY
-	spec.summary = "FasterCSV is CSV, but faster, smaller, and cleaner."
+	spec.summary  = "FasterCSV is CSV, but faster, smaller, and cleaner."
 
-	spec.files = Dir.glob("{lib,test,examples}/**/*.rb").
-	                 reject { |item| item.include?(".svn") } +
-	             Dir.glob("{test,examples}/**/*.csv").
-	                 reject { |item| item.include?(".svn") } +
-	                 ["Rakefile", "setup.rb"]
 	spec.test_suite_file = "test/ts_all.rb"
+	spec.files           = Dir.glob("{lib,test,examples}/**/*.rb").
+	                           reject { |item| item.include?(".svn") } +
+	                       Dir.glob("{test,examples}/**/*.csv").
+	                           reject { |item| item.include?(".svn") } +
+	                           ["Rakefile", "setup.rb"]
 
-	spec.has_rdoc = true
-	spec.extra_rdoc_files = %w{ AUTHORS COPYING README INSTALL TODO CHANGELOG
-	                            LICENSE }
-	spec.rdoc_options << "--title" << "FasterCSV Documentation" <<
-	                     "--main"  << "README"
+	spec.has_rdoc         = true
+	spec.extra_rdoc_files = %w[ AUTHORS COPYING README INSTALL TODO CHANGELOG
+	                            LICENSE ]
+	spec.rdoc_options     << "--title" << "FasterCSV Documentation" <<
+	                         "--main"  << "README"
 
 	spec.require_path = "lib"
-	spec.autorequire = "faster_csv"
 
-	spec.author = "James Edward Gray II"
-	spec.email = "james@grayproductions.net"
+	spec.author            = "James Edward Gray II"
+	spec.email             = "james@grayproductions.net"
 	spec.rubyforge_project = "fastercsv"
-	spec.homepage = "http://fastercsv.rubyforge.org"
-	spec.description = <<END_DESC
+	spec.homepage          = "http://fastercsv.rubyforge.org"
+	spec.description       = <<END_DESC
 FasterCSV is intended as a complete replacement to the CSV standard library. It
 is significantly faster and smaller while still being pure Ruby code. It also
 strives for a better interface.
