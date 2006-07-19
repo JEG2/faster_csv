@@ -2,6 +2,10 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 0.2.2
+
+* Fix FasterCSV.rewind() to reset the FasterCSV.lineno() counter.
+
 == 0.2.1
 
 * Removed autorequire from GemSpec.
@@ -12,9 +16,9 @@ Below is a complete listing of changes for each revision of FasterCSV.
 
 * Added VERSION constant.
 * Significantly improved test speed.
-* Worked around Date::parse bug so tests will pass on Windows.
+* Worked around Date::parse() bug so tests will pass on Windows.
 * Documented test procedure.
-* Made FasterCSV#lineno CSV aware.
+* Made FasterCSV.lineno() CSV aware.
 * Added line numbers to MalformedCSVError messages.
 * <tt>:headers</tt> can now be set to an Array of headers to use.
 * <tt>:headers</tt> can now be set to an external CSV String of headers to use.
@@ -25,7 +29,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
 * Added header information to FieldInfo Struct for conversions by header.
 * Added an alias to support <tt>require "fastercsv"</tt>.
 * Added FCSV alias for FasterCSV.
-* Added FasterCSV::instance and FasterCSV()/FCSV() shortcuts for easy output.
+* Added FasterCSV::instance() and FasterCSV()/FCSV() shortcuts for easy output.
 
 == 0.1.9
 

@@ -75,7 +75,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "0.2.1".freeze
+  VERSION = "0.2.2".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -768,7 +768,6 @@ class FasterCSV
   # * pid()
   # * pos()
   # * reopen()
-  # * rewind()
   # * seek()
   # * stat()
   # * sync()
@@ -943,19 +942,25 @@ class FasterCSV
     @lineno = 0
   end
   
+  ### IO and StringIO Delegation ###
+  
   # 
   # The line number of the last row read from this file.  Fields with nested 
   # line-end characters will not affect this count.
   # 
   attr_reader :lineno
   
-  ### IO and StringIO Delegation ###
-  
   extend Forwardable
   def_delegators :@io, :binmode, :close, :close_read, :close_write, :closed?,
                        :eof, :eof?, :fcntl, :fileno, :flush, :fsync, :ioctl,
-                       :isatty, :pid, :pos, :reopen, :rewind, :seek, :stat,
-                       :string, :sync, :sync=, :tell, :to_i, :to_io, :tty?
+                       :isatty, :pid, :pos, :reopen, :seek, :stat, :string,
+                       :sync, :sync=, :tell, :to_i, :to_io, :tty?
+  
+  # Rewinds the underlying IO object and resets FasterCSV's lineno() counter.
+  def rewind
+    @lineno = 0
+    @io.rewind
+  end
 
   ### End Delegation ###
   

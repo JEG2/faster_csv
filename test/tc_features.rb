@@ -28,6 +28,16 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
                  [%Q{"\r\n,"},           ["\r\n,"]],
                  [%Q{"\r\n,",},          ["\r\n,", nil]] ]
   
+  def setup
+    @sample_data = <<-END_DATA.gsub(/^ +/, "")
+    line,1,abc
+    line,2,"def\nghi"
+    
+    line,4,jkl
+    END_DATA
+    @csv = FasterCSV.new(@sample_data)
+  end
+  
   def test_col_sep
     [";", "\t"].each do |sep|
       TEST_CASES.each do |test_case|
@@ -64,22 +74,22 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
   end
   
   def test_lineno
-    sample_data = <<-END_DATA.gsub(/^ +/, "")
-    line,1,abc
-    line,2,"def\nghi"
+    assert_equal(5, @sample_data.to_a.size)
     
-    line,4,jkl
-    END_DATA
-    assert_equal(5, sample_data.to_a.size)
-    
-    csv = FasterCSV.new(sample_data)
     4.times do |line_count|
-      assert_equal(line_count, csv.lineno)
-      assert_not_nil(csv.shift)
-      assert_equal(line_count + 1, csv.lineno)
+      assert_equal(line_count, @csv.lineno)
+      assert_not_nil(@csv.shift)
+      assert_equal(line_count + 1, @csv.lineno)
     end
-    assert_nil(csv.shift)
-    csv.close
+    assert_nil(@csv.shift)
+  end
+  
+  def test_readline
+    test_lineno
+    
+    @csv.rewind
+    
+    test_lineno
   end
   
   def test_unknown_options
