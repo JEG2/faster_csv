@@ -103,6 +103,13 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
     assert_nothing_raised(Exception) do 
       FasterCSV.new(String.new, :col_sep => "|")
     end
+    
+    # failing to reset header behavior on rewind() (reported by Chris Roos)
+    csv = FasterCSV.new( "forename,surname", :headers        => true,
+                                             :return_headers => true )
+    csv.each { |row| assert row.header_row? }
+    csv.rewind
+    csv.each { |row| assert row.header_row? }
   end
   
   def test_version

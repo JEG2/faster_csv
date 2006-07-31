@@ -958,7 +958,9 @@ class FasterCSV
   
   # Rewinds the underlying IO object and resets FasterCSV's lineno() counter.
   def rewind
-    @lineno = 0
+    @headers = nil
+    @lineno  = 0
+    
     @io.rewind
   end
 
