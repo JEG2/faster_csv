@@ -4,8 +4,10 @@ Below is a complete listing of changes for each revision of FasterCSV.
 
 == 0.2.2
 
-* Fix FasterCSV.rewind() to reset the FasterCSV.lineno() counter.
-* Fix FasterCSV.rewind() to reset the header processing.
+* Fixed FasterCSV.rewind() to reset the FasterCSV.lineno() counter.
+* Fixed FasterCSV.rewind() to reset the header processing.
+* Fixed documentation typos.
+* Switched STDOUT and STDERR usage to $stdout and $stderr where appropriate.
 
 == 0.2.1
 

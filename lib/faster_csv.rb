@@ -69,9 +69,9 @@ require "stringio"
 # 
 # == Shortcut Interface
 # 
-#   FCSV            { |csv_out| csv_out << %w{my data here} }  # to STDOUT
-#   FCSV(csv = "")  { |csv_str| csv_str << %w{my data here} }  # to a String
-#   FCSV(STDERR)    { |csv_err| csv_err << %w{my data here} }  # to STDERR
+#   FCSV             { |csv_out| csv_out << %w{my data here} }  # to $stdout
+#   FCSV(csv = "")   { |csv_str| csv_str << %w{my data here} }  # to a String
+#   FCSV($stderr)    { |csv_err| csv_err << %w{my data here} }  # to $stderr
 # 
 class FasterCSV
   # The version of the installed library.
@@ -566,7 +566,7 @@ class FasterCSV
   # 
   # The +input+ and +output+ arguments can be anything FasterCSV::new() accepts
   # (generally String or IO objects).  If not given, they default to 
-  # <tt>ARGF</tt> and <tt>STDOUT</tt>.
+  # <tt>ARGF</tt> and <tt>$stdout</tt>.
   # 
   # The +options+ parameter is also filtered down to FasterCSV::new() after some
   # clever key parsing.  Any key beginning with <tt>:in_</tt> or 
@@ -595,8 +595,8 @@ class FasterCSV
       end
     end
     # build input and output wrappers
-    input   = FasterCSV.new(args.shift || ARGF,   in_options)
-    output  = FasterCSV.new(args.shift || STDOUT, out_options)
+    input   = FasterCSV.new(args.shift || ARGF,    in_options)
+    output  = FasterCSV.new(args.shift || $stdout, out_options)
     
     # read, yield, write
     input.each do |row|
@@ -610,7 +610,7 @@ class FasterCSV
   # pass a +path+ and any +options+ you wish to set for the read.  Each row of
   # file will be passed to the provided +block+ in turn.
   # 
-  # The +options+ parameter can be anthing FasterCSV::new() understands.
+  # The +options+ parameter can be anything FasterCSV::new() understands.
   # 
   def self.foreach( path, options = Hash.new, &block )
     open(path, options) do |csv|
@@ -665,12 +665,12 @@ class FasterCSV
   # This method will return a FasterCSV instance, just like FasterCSV::new(), 
   # but the instance will be cached and returned for all future calls to this 
   # method for the same +data+ object (tested by Object#object_id()) with the
-  # same +options+
+  # same +options+.
   # 
   # If a block is given, the instance is passed to the block and the return
   # value becomes the return value of the block.
   # 
-  def self.instance( data = STDOUT, options = Hash.new )
+  def self.instance( data = $stdout, options = Hash.new )
     # create a _signature_ for this method call, data object and options
     sig = [data.object_id] +
           options.values_at(*DEFAULT_OPTIONS.keys.sort_by { |sym| sym.to_s })
