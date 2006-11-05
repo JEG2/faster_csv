@@ -1471,7 +1471,7 @@ class FasterCSV
       # on these
       # 
       csv = if parse.sub!(@parsers[:leading_fields], "")
-        [nil] * $&.length
+        [nil] * ($&.length / @col_sep.length)
       else
         Array.new
       end
@@ -1584,7 +1584,7 @@ class FasterCSV
     # prebuild Regexps for faster parsing
     @parsers    = {
       :leading_fields =>
-        /\A#{Regexp.escape(@col_sep)}+/,         # for empty leading fields
+        /\A(?:#{Regexp.escape(@col_sep)})+/,     # for empty leading fields
       :csv_row        =>
         ### The Primary Parser ###
         / \G(?:^|#{Regexp.escape(@col_sep)})     # anchor the match

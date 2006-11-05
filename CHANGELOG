@@ -11,6 +11,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
 * Added FasterCSV::Row.==().
 * Enhanced FasterCSV::Row.fields() to support Ranges, even for headers.
 * The slurping methods now return the new FasterCSV::Table objects.
+* Fixed parser so multibyte <tt>:col_sep</tt> works now.
 
 == 0.2.1
 

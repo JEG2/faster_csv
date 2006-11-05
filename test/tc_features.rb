@@ -110,6 +110,17 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
     csv.each { |row| assert row.header_row? }
     csv.rewind
     csv.each { |row| assert row.header_row? }
+    
+    # 
+    # leading empty fields with multibyte col_sep raises MalformedCSVError
+    # (reported by Dave Burt)
+    # 
+    data = <<-END_DATA.gsub(/^\s+/, "")
+    <=><=>A<=>B<=>C
+    1<=>2<=>3
+    END_DATA
+    parsed = FasterCSV.parse(data, :col_sep => "<=>")
+    assert_equal([[nil, nil, "A", "B", "C"], ["1", "2", "3"]], parsed)
   end
   
   def test_version
