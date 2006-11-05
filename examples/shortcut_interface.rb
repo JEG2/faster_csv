@@ -30,3 +30,7 @@ FCSV(STDERR) do |f|
   f << %w( 0 1 2 )
   f << %w( A B C )
 end
+# >> a,b,c
+# >> d,e,f
+# >> q,r,s
+# >> x,y,z

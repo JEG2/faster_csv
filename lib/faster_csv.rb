@@ -1250,7 +1250,9 @@ class FasterCSV
   #                                       Array of headers.  This setting causes
   #                                       FasterCSV.shift() to return rows as
   #                                       FasterCSV::Row objects instead of
-  #                                       Arrays.
+  #                                       Arrays and FasterCSV.read() to return
+  #                                       FasterCSV::Table objects instead of
+  #                                       an Array of Arrays.
   # <b><tt>:return_headers</tt></b>::     When +false+, header rows are silently
   #                                       swallowed.  If set to +true+, header
   #                                       rows are returned in a FasterCSV::Row
