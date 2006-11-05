@@ -195,6 +195,9 @@ class TestFasterCSVRow < Test::Unit::TestCase
     
     # with minimum indices
     assert_equal([2, 3, 4], @row.fields("B", "C", ["A", 3]))
+    
+    # by header range
+    assert_equal([2, 3], @row.values_at("B".."C"))
   end
   
   def test_index

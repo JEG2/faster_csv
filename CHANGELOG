@@ -2,12 +2,15 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
-== 0.2.2
+== 1.0.0
 
 * Fixed FasterCSV.rewind() to reset the FasterCSV.lineno() counter.
 * Fixed FasterCSV.rewind() to reset the header processing.
 * Fixed documentation typos.
 * Switched STDOUT and STDERR usage to $stdout and $stderr where appropriate.
+* Added FasterCSV::Row.==().
+* Enhanced FasterCSV::Row.fields() to support Ranges, even for headers.
+* The slurping methods now return the new FasterCSV::Table objects.
 
 == 0.2.1
 

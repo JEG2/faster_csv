@@ -75,7 +75,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "0.2.2".freeze
+  VERSION = "1.0.0".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -105,6 +105,10 @@ class FasterCSV
         fields.zip(headers).map { |pair| pair.reverse }
       end
     end
+    
+    # Internal data format used to compare equality.
+    attr_reader :row
+    protected   :row
     
     # Returns +true+ if this is a header row.
     def header_row?
@@ -248,8 +252,9 @@ class FasterCSV
     
     # 
     # This method accepts any number of arguments which can be headers, indices,
-    # or two-element Arrays containing a header and offset.  Each argument will
-    # be replaced with a field lookup as described in FasterCSV::Row.field().
+    # Ranges of either, or two-element Arrays containing a header and offset.  
+    # Each argument will be replaced with a field lookup as described in
+    # FasterCSV::Row.field().
     # 
     # If called with no arguments, all fields are returned.
     # 
@@ -257,7 +262,19 @@ class FasterCSV
       if headers_and_or_indices.empty?  # return all fields--no arguments
         @row.map { |pair| pair.last }
       else                              # or work like values_at()
-        headers_and_or_indices.map { |h_or_i| field(*Array(h_or_i)) }
+        headers_and_or_indices.inject(Array.new) do |all, h_or_i|
+          all + if h_or_i.is_a? Range
+            index_begin = h_or_i.begin.is_a?(Integer) ? h_or_i.begin :
+                                                        index(h_or_i.begin)
+            index_end   = h_or_i.end.is_a?(Integer)   ? h_or_i.end :
+                                                        index(h_or_i.end)
+            new_range   = h_or_i.exclude_end? ? (index_begin...index_end) :
+                                                (index_begin..index_end)
+            fields.values_at(new_range)
+          else
+            [field(*Array(h_or_i))]
+          end
+        end
       end
     end
     alias_method :values_at, :fields
@@ -309,6 +326,14 @@ class FasterCSV
     end
     
     # 
+    # Returns +true+ if this row contains the same headers and fields in the 
+    # same order as +other+.
+    # 
+    def ==( other )
+      @row == other.row
+    end
+    
+    # 
     # Collapses the row into a simple Hash.  Be warning that this discards field
     # order and clobbers duplicate fields.
     # 
@@ -324,6 +349,326 @@ class FasterCSV
     # 
     def to_csv( options = Hash.new )
       fields.to_csv(options)
+    end
+    alias_method :to_s, :to_csv
+  end
+  
+  # 
+  # A FasterCSV::Table is a two-dimensional data structure for representing CSV
+  # documents.  Tables allow you to work with the data by row or column, 
+  # manipulate the data, and even convert the results back to CSV, if needed.
+  # 
+  # All tables returned by FasterCSV will be constructed from this class, if
+  # header row processing is activated.
+  # 
+  class Table
+    # 
+    # Construct a new FasterCSV::Table from +array_of_rows+, which are expected
+    # to be FasterCSV::Row objects.  All rows are assumed to have the same 
+    # headers.
+    # 
+    def initialize( array_of_rows )
+      @table = array_of_rows
+      @mode  = :col_or_row
+    end
+    
+    # The current access mode for indexing and iteration.
+    attr_reader :mode
+    
+    # Internal data format used to compare equality.
+    attr_reader :table
+    protected   :table
+    
+    # 
+    # Returns a duplicate table object, in column mode.  This is handy for 
+    # chaining in a single call without changing the table mode, but be aware 
+    # that this method can consume a fair amount of memory for bigger data sets.
+    # 
+    # This method returns the duplicate table for chaining.  Don't chain
+    # destructive methods (like []=()) this way though, since you are working
+    # with a duplicate.
+    # 
+    def by_col
+      self.class.new(@table.dup).by_col!
+    end
+    
+    # 
+    # Switches the mode of this table to column mode.  All calls to indexing and
+    # iteration methods will work with columns until the mode is changed again.
+    # 
+    # This method returns the table and is safe to chain.
+    # 
+    def by_col!
+      @mode = :col
+      
+      self
+    end
+    
+    # 
+    # Returns a duplicate table object, in mixed mode.  This is handy for 
+    # chaining in a single call without changing the table mode, but be aware 
+    # that this method can consume a fair amount of memory for bigger data sets.
+    # 
+    # This method returns the duplicate table for chaining.  Don't chain
+    # destructive methods (like []=()) this way though, since you are working
+    # with a duplicate.
+    # 
+    def by_col_or_row
+      self.class.new(@table.dup).by_col_or_row!
+    end
+    
+    # 
+    # Switches the mode of this table to mixed mode.  All calls to indexing and
+    # iteration methods will use the default intelligent indexing system until
+    # the mode is changed again.  In mixed mode an index is assumed to be a row
+    # reference while anything else is assumed to be column access by headers.
+    # 
+    # This method returns the table and is safe to chain.
+    # 
+    def by_col_or_row!
+      @mode = :col_or_row
+      
+      self
+    end
+    
+    # 
+    # Returns a duplicate table object, in row mode.  This is handy for chaining
+    # in a single call without changing the table mode, but be aware that this
+    # method can consume a fair amount of memory for bigger data sets.
+    # 
+    # This method returns the duplicate table for chaining.  Don't chain
+    # destructive methods (like []=()) this way though, since you are working
+    # with a duplicate.
+    # 
+    def by_row
+      self.class.new(@table.dup).by_row!
+    end
+    
+    # 
+    # Switches the mode of this table to row mode.  All calls to indexing and
+    # iteration methods will work with rows until the mode is changed again.
+    # 
+    # This method returns the table and is safe to chain.
+    # 
+    def by_row!
+      @mode = :row
+      
+      self
+    end
+    
+    # 
+    # Returns the headers for the first row of this table (assumed to match all
+    # other rows).  An empty Array is returned for empty tables.
+    # 
+    def headers
+      if @table.empty?
+        Array.new
+      else
+        @table.first.headers
+      end
+    end
+    
+    # 
+    # In the default mixed mode, this method returns rows for index access and
+    # columns for header access.  You can force the index association by first
+    # calling by_col!() or by_row!().
+    # 
+    # Columns are returned as an Array of values.  Altering that Array has no
+    # effect on the table.
+    # 
+    def []( index_or_header )
+      if @mode == :row or  # by index
+         (@mode == :col_or_row and index_or_header.is_a? Integer)
+        @table[index_or_header]
+      else                 # by header
+        @table.map { |row| row[index_or_header] }
+      end
+    end
+    
+    # 
+    # In the default mixed mode, this method assigns rows for index access and
+    # columns for header access.  You can force the index association by first
+    # calling by_col!() or by_row!().
+    # 
+    # Rows may be set to an Array of values (which will inherit the table's
+    # headers()) or a FasterCSV::Row.
+    # 
+    # Columns may be set to a single value, which is copied to each row of the 
+    # column, or an Array of values.  Arrays of values are assigned to rows top
+    # to bottom in row major order.  Excess values are ignored and if the Array
+    # does not have a value for each row the extra rows will receive a +nil+.
+    # 
+    # Assigning to an existing column or row clobbers the data.  Assigning to
+    # new columns creates them at the right end of the table.
+    # 
+    def []=( index_or_header, value )
+      if @mode == :row or  # by index
+         (@mode == :col_or_row and index_or_header.is_a? Integer)
+        if value.is_a? Array
+          @table[index_or_header] = Row.new(headers, value)
+        else
+          @table[index_or_header] = value
+        end
+      else                 # set column
+        if value.is_a? Array  # multiple values
+          @table.each_with_index do |row, i|
+            if row.header_row?
+              row[index_or_header] = index_or_header
+            else
+              row[index_or_header] = value[i]
+            end
+          end
+        else                  # repeated value
+          @table.each do |row|
+            if row.header_row?
+              row[index_or_header] = index_or_header
+            else
+              row[index_or_header] = value
+            end
+          end
+        end
+      end
+    end
+    
+    # 
+    # The mixed mode default is to treat a list of indices as row access,
+    # returning the rows indicated.  Anything else is considered columnar
+    # access.  For columnar access, the return set has an Array for each row
+    # with the values indicated by the headers in each Array.  You can force
+    # column or row mode using by_col!() or by_row!().
+    # 
+    # You cannot mix column and row access.
+    # 
+    def values_at( *indices_or_headers )
+      if @mode == :row or  # by indices
+         ( @mode == :col_or_row and indices_or_headers.all? do |index|
+                                      index.is_a?(Integer)         or
+                                      ( index.is_a?(Range)         and
+                                        index.first.is_a?(Integer) and
+                                        index.last.is_a?(Integer) )
+                                    end )
+        @table.values_at(*indices_or_headers)
+      else                 # by headers
+        @table.map { |row| row.values_at(*indices_or_headers) }
+      end
+    end
+
+    # 
+    # Adds a new row to the bottom end of this table.  You can provide an Array,
+    # which will be converted to a FasterCSV::Row (inheriting the table's
+    # headers()), or a FasterCSV::Row.
+    # 
+    # This method returns the table for chaining.
+    # 
+    def <<( row_or_array )
+      if row_or_array.is_a? Array  # append Array
+        @table << Row.new(headers, row_or_array)
+      else                         # append Row
+        @table << row_or_array
+      end
+      
+      self  # for chaining
+    end
+    
+    # 
+    # A shortcut for appending multiple rows.  Equivalent to:
+    # 
+    #   rows.each { |row| self << row }
+    # 
+    # This method returns the table for chaining.
+    # 
+    def push( *rows )
+      rows.each { |row| self << row }
+      
+      self  # for chaining
+    end
+
+    # 
+    # Removes and returns the indicated column or row.  In the default mixed
+    # mode indices refer to rows and everything else is assumed to be a column
+    # header.  Use by_col!() or by_row!() to force the lookup.
+    # 
+    def delete( index_or_header )
+      if @mode == :row or  # by index
+         (@mode == :col_or_row and index_or_header.is_a? Integer)
+        @table.delete_at(index_or_header)
+      else                 # by header
+        @table.map { |row| row.delete(index_or_header).last }
+      end
+    end
+    
+    # 
+    # Removes any column or row for which the block returns +true+.  In the
+    # default mixed mode or row mode, iteration is the standard row major
+    # walking of rows.  In column mode, interation will +yield+ two element
+    # tuples containing the column name and an Array of values for that column.
+    # 
+    # This method returns the table for chaining.
+    # 
+    def delete_if( &block )
+      if @mode == :row or @mode == :col_or_row  # by index
+        @table.delete_if(&block)
+      else                                      # by header
+        to_delete = Array.new
+        headers.each_with_index do |header, i|
+          to_delete << header if block[[header, self[header]]]
+        end
+        to_delete.map { |header| delete(header) }
+      end
+      
+      self  # for chaining
+    end
+    
+    include Enumerable
+    
+    # 
+    # In the default mixed mode or row mode, iteration is the standard row major
+    # walking of rows.  In column mode, interation will +yield+ two element
+    # tuples containing the column name and an Array of values for that column.
+    # 
+    # This method returns the table for chaining.
+    # 
+    def each( &block )
+      if @mode == :col
+        headers.each { |header| block[[header, self[header]]] }
+      else
+        @table.each(&block)
+      end
+      
+      self  # for chaining
+    end
+    
+    # Returns +true+ if all rows of this table ==() +other+'s rows.
+    def ==( other )
+      @table == other.table
+    end
+    
+    # 
+    # Returns the table as an Array of Arrays.  Headers will be the first row,
+    # then all of the field rows will follow.
+    # 
+    def to_a
+      @table.inject([headers]) do |array, row|
+        if row.header_row?
+          array
+        else
+          array + [row.fields]
+        end
+      end
+    end
+    
+    # 
+    # Returns the table as a complete CSV String.  Headers will be listed first,
+    # then all of the field rows.
+    # 
+    def to_csv( options = Hash.new )
+      @table.inject([headers.to_csv(options)]) do |rows, row|
+        if row.header_row?
+          rows
+        else
+          rows + [row.fields.to_csv(options)]
+        end
+      end.join
     end
     alias_method :to_s, :to_csv
   end
@@ -1055,7 +1400,12 @@ class FasterCSV
   # The data source must be open for reading.
   # 
   def read
-    to_a
+    rows = to_a
+    if @use_headers
+      Table.new(rows)
+    else
+      rows
+    end
   end
   alias_method :readlines, :read
   
