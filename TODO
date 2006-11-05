@@ -3,29 +3,4 @@
 The following is a list of planned expansions for FasterCSV, in no particular
 order.
 
-* Find a good headers solution for data like this:
-    "Experiment ID:	1",,,,,,,,,,,,
-    "Subject ID:	1013938829432171e868c340.
-    Trial,stimulus,time,type,field1,field2,text_response,Abs. time of
-    response,,,,,
-    26,undefined,14828,KEY,RETURN,UNUSED,DCS,Sat Oct 15 17:48:04 GMT-0400
-    2005,,,,,
-    23,undefined,15078,KEY,RETURN,UNUSED,244,Sat Oct 15 17:48:19 GMT-0400
-    2005,,,,,
-    7,nixontrialleft copy.pct [TAG: 1],5953,KEY,1,UNUSED,,Sat Oct 15
-    17:49:24 GMT-0400 2005,,,,,
-    8,nixontrialfront copy.pct [TAG: 3],6250,KEY,3,UNUSED,,Sat Oct 15
-    17:49:31 GMT-0400 2005,,,,,
-    9,nixontrialright copy.pct [TAG: 2],2469,KEY,2,UNUSED,,Sat Oct 15
-    17:49:34 GMT-0400 2005,,,,,
-    #####
-    more data
-    ######
-    ,,,,,,,,,,4374.347222,,
-    ,,,,,,,,,,,,1.00
-    ,,,,,,,,,,,,0.93
-    ### and a new block starts
-    "Experiment ID:	3",,,,,,,,,,,,0.92
-    ....
-* Add calculated fields.
-* Examples, examples, examples...
+  * Rent this space!

@@ -1,0 +1,21 @@
+#!/usr/local/bin/ruby -w
+
+# csv_rails_import.rb
+#
+#  Created by James Edward Gray II on 2006-11-05.
+#  Copyright 2006 Gray Productions. All rights reserved.
+
+namespace :my_app_name do
+  desc "Injects purchase.csv into the database."
+  task :load_purchase => [:environment] do
+    require "#{RAILS_ROOT}/vendor/faster_csv/lib/faster_csv"
+    
+    purchase = Purchase.create!
+    
+    FCSV.foreach( "#{RAILS_ROOT}/db/questions.csv",
+                  :headers           => true,
+                  :header_converters => :symbol ) do |line|
+      purchase.line_items.create!(line.to_hash)
+    end
+  end
+end
