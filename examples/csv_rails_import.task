@@ -1,6 +1,6 @@
 #!/usr/local/bin/ruby -w
 
-# csv_rails_import.rb
+# csv_rails_import.task
 #
 #  Created by James Edward Gray II on 2006-11-05.
 #  Copyright 2006 Gray Productions. All rights reserved.
