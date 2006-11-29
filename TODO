@@ -3,4 +3,19 @@
 The following is a list of planned expansions for FasterCSV, in no particular
 order.
 
-  * Rent this space!
+  * I'm using FasterCSV to parse CSV files from different sources, and
+    occasionally the source (which I don't control) outputs
+    a blank line.
+
+    When doing "FasterCSV.foreach(file, :headers => :first_row) do |row|" the
+    "row" variable will become an Array object when it encounters a blank line. 
+    Within the loop I do something like "next if
+    row.respond_to?(:empty?) && row.empty?" to skip the row if its blank, but I
+    think of this more as a hack.
+
+    It would be nice if FasterCSV.foreach would skip over the row instead of
+    instantiating an Array object.
+
+    Thanks,
+
+    Dan Kubb
