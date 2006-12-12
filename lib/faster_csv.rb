@@ -75,7 +75,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.0.0".freeze
+  VERSION = "1.1.0".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -95,6 +95,13 @@ class FasterCSV
     # FasterCSV::Row.header_row?() and FasterCSV::Row.field_row?(), that this is
     # a header row.  Otherwise, the row is assumes to be a field row.
     # 
+    # A FasterCSV::Row object supports the following Array methods through
+    # delegation:
+    # 
+    # * empty?()
+    # * length()
+    # * size()
+    # 
     def initialize(headers, fields, header_row = false)
       @header_row = header_row
       
@@ -109,6 +116,11 @@ class FasterCSV
     # Internal data format used to compare equality.
     attr_reader :row
     protected   :row
+
+    ### Array Delegation ###
+
+    extend Forwardable
+    def_delegators :@row, :empty?, :length, :size
     
     # Returns +true+ if this is a header row.
     def header_row?
@@ -367,6 +379,13 @@ class FasterCSV
     # to be FasterCSV::Row objects.  All rows are assumed to have the same 
     # headers.
     # 
+    # A FasterCSV::Table object supports the following Array methods through
+    # delegation:
+    # 
+    # * empty?()
+    # * length()
+    # * size()
+    # 
     def initialize(array_of_rows)
       @table = array_of_rows
       @mode  = :col_or_row
@@ -378,6 +397,11 @@ class FasterCSV
     # Internal data format used to compare equality.
     attr_reader :table
     protected   :table
+
+    ### Array Delegation ###
+
+    extend Forwardable
+    def_delegators :@table, :empty?, :length, :size
     
     # 
     # Returns a duplicate table object, in column mode.  This is handy for 
@@ -749,6 +773,7 @@ class FasterCSV
   # <b><tt>:headers</tt></b>::            +false+
   # <b><tt>:return_headers</tt></b>::     +false+
   # <b><tt>:header_converters</tt></b>::  +nil+
+  # <b><tt>:skip_blanks</tt></b>::        +false+
   # 
   DEFAULT_OPTIONS = { :col_sep            => ",",
                       :row_sep            => :auto,
@@ -756,7 +781,8 @@ class FasterCSV
                       :unconverted_fields => nil,
                       :headers            => false,
                       :return_headers     => false,
-                      :header_converters  => nil }.freeze
+                      :header_converters  => nil,
+                      :skip_blanks        => false }.freeze
   
   # 
   # This method will build a drop-in replacement for many of the standard CSV
@@ -1263,6 +1289,9 @@ class FasterCSV
   #                                       <tt>:converters</tt> save that the
   #                                       conversions are only made to header
   #                                       rows.
+  # <b><tt>:skip_blanks</tt></b>::        When set to a +true+ value, FasterCSV
+  #                                       will skip over any rows with no
+  #                                       content.
   # 
   # See FasterCSV::DEFAULT_OPTIONS for the default settings.
   # 
@@ -1289,13 +1318,13 @@ class FasterCSV
     @lineno = 0
   end
   
-  ### IO and StringIO Delegation ###
-  
   # 
   # The line number of the last row read from this file.  Fields with nested 
   # line-end characters will not affect this count.
   # 
   attr_reader :lineno
+  
+  ### IO and StringIO Delegation ###
   
   extend Forwardable
   def_delegators :@io, :binmode, :close, :close_read, :close_write, :closed?,
@@ -1432,11 +1461,11 @@ class FasterCSV
     # handle headers not based on document content
     if header_row? and @return_headers and
        [Array, String].include? @use_headers.class
-       if @unconverted_fields
-         return add_unconverted_fields(parse_headers, Array.new)
-       else
-         return parse_headers
-       end
+      if @unconverted_fields
+        return add_unconverted_fields(parse_headers, Array.new)
+      else
+        return parse_headers
+      end
     end
     
     # begin with a blank line, so we can always add to it
@@ -1459,8 +1488,13 @@ class FasterCSV
       # 
       if parse.empty?
         @lineno += 1
-        if @unconverted_fields
+        if @skip_blanks
+          line = ""
+          next
+        elsif @unconverted_fields
           return add_unconverted_fields(Array.new, Array.new)
+        elsif @use_headers
+          return FasterCSV::Row.new(Array.new, Array.new)
         else
           return Array.new
         end
@@ -1581,6 +1615,9 @@ class FasterCSV
   
   # Pre-compiles parsers and stores them by name for access during reads.
   def init_parsers(options)
+    # store the parser behaviors
+    @skip_blanks = options.delete(:skip_blanks)
+    
     # prebuild Regexps for faster parsing
     @parsers    = {
       :leading_fields =>

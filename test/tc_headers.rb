@@ -224,4 +224,39 @@ class TestFasterCSVHeaders < Test::Unit::TestCase
     
     assert_instance_of(FasterCSV::Table, csv)
   end
+  
+  def test_skip_blanks
+    @data = <<-END_CSV.gsub(/^ +/, "")
+    
+
+    A,B,C
+    
+    1,2,3
+    
+    
+    
+    END_CSV
+    
+    expected = [%w[1 2 3]]
+    FasterCSV.parse(@data, :headers => true, :skip_blanks => true) do |row|
+      assert_equal(expected.shift, row.fields)
+    end
+    
+    expected = [%w[A B C], %w[1 2 3]]
+    FasterCSV.parse( @data,
+                     :headers        => true,
+                     :return_headers => true, 
+                     :skip_blanks    => true ) do |row|
+      assert_equal(expected.shift, row.fields)
+    end
+  end
+  
+  def test_blank_row_bug_fix
+    @data += "\n#{@data}"  # add a blank row
+    
+    # ensure that everything returned is a Row object
+    FasterCSV.parse(@data, :headers => true) do |row|
+      assert_instance_of(FasterCSV::Row, row)
+    end
+  end
 end

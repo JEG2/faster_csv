@@ -2,6 +2,15 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 1.1.0
+
+* Added empty?(), length(), and size() methods to FasterCSV::Row and
+  FasterCSV::Table.
+* Cleaned up bug fix regression tests.
+* Fixed bug causing Arrays to be returned for blank rows when header processing
+  is active.
+* Added a <tt>:skip_blanks</tt> option for ignoring empty rows.
+
 == 1.0.0
 
 * Fixed FasterCSV.rewind() to reset the FasterCSV.lineno() counter.

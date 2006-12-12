@@ -279,4 +279,10 @@ class TestFasterCSVRow < Test::Unit::TestCase
     assert_equal( "1|2|3|4|\r\n",
                   @row.to_csv(:col_sep => "|", :row_sep => "\r\n") )
   end
+  
+  def test_array_delegation
+    assert(!@row.empty?, "Row was empty.")
+    
+    assert_equal([@row.headers.size, @row.fields.size].max, @row.size)
+  end
 end

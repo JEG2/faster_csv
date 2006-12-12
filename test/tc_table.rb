@@ -382,4 +382,10 @@ class TestFasterCSVTable < Test::Unit::TestCase
     assert_equal([[1, 3], [4, 6], [7, 9]], @table.by_col.values_at(0, 2))
     assert_equal(@rows.values_at(0, 2), @table.values_at(0, 2))
   end
+  
+  def test_array_delegation
+    assert(!@table.empty?, "Table was empty.")
+    
+    assert_equal(@rows.size, @table.size)
+  end
 end

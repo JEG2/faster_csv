@@ -98,23 +98,37 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
     end
   end
   
-  def test_bug_fixes
-    # failing to escape <tt>:col_sep</tt> (reported by Kev Jackson)
+  def test_skip_blanks
+    assert_equal(4, @csv.to_a.size)
+
+    @csv  = FasterCSV.new(@sample_data, :skip_blanks => true)
+    
+    count = 0
+    @csv.each do |row|
+      count += 1
+      assert_equal("line", row.first)
+    end
+    assert_equal(3, count)
+  end
+  
+  # reported by Kev Jackson
+  def test_failing_to_escape_col_sep_bug_fix
     assert_nothing_raised(Exception) do 
       FasterCSV.new(String.new, :col_sep => "|")
     end
-    
-    # failing to reset header behavior on rewind() (reported by Chris Roos)
+  end
+  
+  # reported by Chris Roos
+  def test_failing_to_reset_headers_in_rewind_bug_fix
     csv = FasterCSV.new( "forename,surname", :headers        => true,
                                              :return_headers => true )
     csv.each { |row| assert row.header_row? }
     csv.rewind
     csv.each { |row| assert row.header_row? }
-    
-    # 
-    # leading empty fields with multibyte col_sep raises MalformedCSVError
-    # (reported by Dave Burt)
-    # 
+  end
+  
+  # reported by Dave Burt
+  def test_leading_empty_fields_with_multibyte_col_sep_bug_fix
     data = <<-END_DATA.gsub(/^\s+/, "")
     <=><=>A<=>B<=>C
     1<=>2<=>3
