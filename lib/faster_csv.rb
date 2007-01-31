@@ -75,7 +75,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.1.0".freeze
+  VERSION = "1.1.1".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -774,6 +774,7 @@ class FasterCSV
   # <b><tt>:return_headers</tt></b>::     +false+
   # <b><tt>:header_converters</tt></b>::  +nil+
   # <b><tt>:skip_blanks</tt></b>::        +false+
+  # <b><tt>:force_quotes</tt></b>::       +false+
   # 
   DEFAULT_OPTIONS = { :col_sep            => ",",
                       :row_sep            => :auto,
@@ -782,7 +783,8 @@ class FasterCSV
                       :headers            => false,
                       :return_headers     => false,
                       :header_converters  => nil,
-                      :skip_blanks        => false }.freeze
+                      :skip_blanks        => false,
+                      :force_quotes       => false }.freeze
   
   # 
   # This method will build a drop-in replacement for many of the standard CSV
@@ -1292,6 +1294,8 @@ class FasterCSV
   # <b><tt>:skip_blanks</tt></b>::        When set to a +true+ value, FasterCSV
   #                                       will skip over any rows with no
   #                                       content.
+  # <b><tt>:force_quotes</tt></b>::       When set to a +true+ value, FasterCSV
+  #                                       will quote all CSV fields it creates.
   # 
   # See FasterCSV::DEFAULT_OPTIONS for the default settings.
   # 
@@ -1354,19 +1358,7 @@ class FasterCSV
     # handle FasterCSV::Row objects
     row = row.fields if row.is_a? self.class::Row
     
-    @io << row.map do |field|
-      if field.nil?  # represent +nil+ fields as empty unquoted fields
-        ""
-      else
-        field = String(field)  # Stringify fields
-        # represent empty fields as empty quoted fields
-        if field.empty? or field.count(%Q{\r\n#{@col_sep}"}).nonzero?
-          %Q{"#{field.gsub('"', '""')}"}  # escape quoted fields
-        else
-          field  # unquoted field
-        end
-      end
-    end.join(@col_sep) + @row_sep  # add separators
+    @io << row.map(&@quote).join(@col_sep) + @row_sep  # quote and separate
     
     self  # for chaining
   end
@@ -1573,6 +1565,8 @@ class FasterCSV
   # +STDERR+ and any stream open for output only with a default
   # <tt>@row_sep</tt> of <tt>$INPUT_RECORD_SEPARATOR</tt> (<tt>$/</tt>).
   # 
+  # This method also establishes the quoting rules used for CSV output.
+  # 
   def init_separators(options)
     # store the selected separators
     @col_sep = options.delete(:col_sep)
@@ -1608,6 +1602,25 @@ class FasterCSV
           @io.seek(saved_pos)  # reset back to the remembered position 
         rescue IOError  # stream not opened for reading
           @row_sep = $INPUT_RECORD_SEPARATOR
+        end
+      end
+    end
+    
+    # establish quoting rules
+    @quote = if options.delete(:force_quotes)
+      lambda { |field| %Q{"#{String(field).gsub('"', '""')}"} }
+    else
+      lambda do |field|
+        if field.nil?  # represent +nil+ fields as empty unquoted fields
+          ""
+        else
+          field = String(field)  # Stringify fields
+          # represent empty fields as empty quoted fields
+          if field.empty? or field.count(%Q{\r\n#{@col_sep}"}).nonzero?
+            %Q{"#{field.gsub('"', '""')}"}  # escape quoted fields
+          else
+            field  # unquoted field
+          end
         end
       end
     end

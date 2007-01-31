@@ -2,6 +2,10 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 1.1.1
+
+* Added a <tt>:force_quotes</tt> output option.
+
 == 1.1.0
 
 * Added empty?(), length(), and size() methods to FasterCSV::Row and

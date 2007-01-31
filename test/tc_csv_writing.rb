@@ -87,4 +87,10 @@ class TestFasterCSVWriting < Test::Unit::TestCase
     assert_equal( "a,b,,c\r\n", FasterCSV.generate_line( ["a", "b", nil, "c"],
                                                          :row_sep => "\r\n" ) )
   end
+  
+  def test_force_quotes
+    assert_equal( %Q{"1","b","","already ""quoted"""\n},
+                  FasterCSV.generate_line( [1, "b", nil, %Q{already "quoted"}],
+                                           :force_quotes => true ) )
+  end
 end
