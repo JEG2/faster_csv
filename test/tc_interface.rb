@@ -89,6 +89,12 @@ class TestFasterCSVInterface < Test::Unit::TestCase
     end
     assert_equal(@expected, data)
   end
+[]  
+  def test_table
+    table = FasterCSV.table(@path, :col_sep => "\t", :row_sep => "\r\n")
+    assert_instance_of(FasterCSV::Table, table)
+    assert_equal([[:"1", :"2", :"3"], [4, 5, nil]], table.to_a)
+  end
   
   def test_shift  # aliased as gets() and readline()
     FasterCSV.open(@path, "r+", :col_sep => "\t", :row_sep => "\r\n") do |csv|

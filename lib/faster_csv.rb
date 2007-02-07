@@ -75,7 +75,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.1.1".freeze
+  VERSION = "1.2.0".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -1215,6 +1215,19 @@ class FasterCSV
   # Alias for FasterCSV::read().
   def self.readlines(*args)
     read(*args)
+  end
+  
+  # 
+  # A shortcut for:
+  # 
+  #   FasterCSV.read( path, { :headers           => true,
+  #                           :converters        => :numeric,
+  #                           :header_converters => :symbol }.merge(options) )
+  # 
+  def self.table(path, options = Hash.new)
+    read( path, { :headers           => true,
+                  :converters        => :numeric,
+                  :header_converters => :symbol }.merge(options) )
   end
   
   # 
