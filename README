@@ -55,6 +55,16 @@ See FasterCSV for documentation.
 
 See the INSTALL file for instructions.
 
+== What is CSV, really?
+
+FasterCSV maintains a pretty strict definition of CSV taken directly from {the RFC}[http://www.ietf.org/rfc/rfc4180.txt].  I relax the rules in only one place and that is to make using this library easier.  FasterCSV will parse all valid CSV.
+
+What you don't want to do is feed FasterCSV invalid CSV.  Because of the way the CSV format works, it's common for a parser to need to read until the end of the file to be sure a field is invalid.  This eats a lot of time and memory.
+
+Luckily, when working with invalid CSV, Ruby's built-in methods will almost always be superior in every way.  For example, parsing non-quoted fields is as easy as:
+
+  data.split(",")
+
 == Questions and/or Comments
 
 Feel free to email {James Edward Gray II}[mailto:james@grayproductions.net] with
