@@ -1645,7 +1645,7 @@ class FasterCSV
     @skip_blanks = options.delete(:skip_blanks)
     
     # prebuild Regexps for faster parsing
-    @parsers    = {
+    @parsers = {
       :leading_fields =>
         /\A(?:#{Regexp.escape(@col_sep)})+/,     # for empty leading fields
       :csv_row        =>
@@ -1657,7 +1657,7 @@ class FasterCSV
               )/x,
         ### End Primary Parser ###
       :line_end       =>
-        /#{Regexp.escape(@row_sep)}\Z/           # safer than chomp!()
+        /#{Regexp.escape(@row_sep)}\z/           # safer than chomp!()
     }
   end
   
