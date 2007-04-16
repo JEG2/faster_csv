@@ -45,6 +45,8 @@ task :benchmark do
   path = "test/test_data.csv"
 	sh %Q{time ruby -r csv -e } +
 	   %Q{'#{TESTS}.times { CSV.foreach("#{path}") { |row| } }'}
+	sh %Q{time ruby -r lightcsv -e } +
+	   %Q{'#{TESTS}.times { LightCsv.foreach("#{path}") { |row| } }'}
 	sh %Q{time ruby -r lib/faster_csv -e } +
 	   %Q{'#{TESTS}.times { FasterCSV.foreach("#{path}") { |row| } }'}
 end
