@@ -1368,9 +1368,16 @@ class FasterCSV
   # The data source must be open for writing.
   # 
   def <<(row)
-    # handle FasterCSV::Row objects
-    row = row.fields if row.is_a? self.class::Row
-    
+    # Handle FasterCSV::Row objects and Hashes
+    row = case row
+      when self.class::Row then row.fields
+      when Hash            then @headers.map { |header| row[header] }
+      else                      row
+    end
+
+    @headers =  row if header_row?
+    @lineno  += 1
+
     @io << row.map(&@quote).join(@col_sep) + @row_sep  # quote and separate
     
     self  # for chaining

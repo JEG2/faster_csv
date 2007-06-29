@@ -6,6 +6,8 @@ Below is a complete listing of changes for each revision of FasterCSV.
 
 * Worked around an odd incompatibility with the Regexps used to remove line
   endings in some (seemingly rare) Ruby environments.
+* Made FasterCSV::lineno() writer aware.
+* Support Hashes in FasterCSV#<<(), by detecting headers when writing.
 
 == 1.2.0
 

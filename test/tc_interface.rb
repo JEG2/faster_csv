@@ -89,7 +89,7 @@ class TestFasterCSVInterface < Test::Unit::TestCase
     end
     assert_equal(@expected, data)
   end
-[]  
+  
   def test_table
     table = FasterCSV.table(@path, :col_sep => "\t", :row_sep => "\r\n")
     assert_instance_of(FasterCSV::Table, table)
@@ -133,6 +133,44 @@ class TestFasterCSVInterface < Test::Unit::TestCase
     assert_not_nil(line)
     assert_instance_of(String, line)
     assert_equal("1;2;3\n", line)
+  end
+
+  def test_write_header_detection
+    File.unlink(@path)
+
+    headers = %w{a b c}
+    FasterCSV.open(@path, "w", :headers => true) do |csv|
+      csv << headers
+      csv << %w{1 2 3}
+      assert_equal(headers, csv.instance_variable_get(:@headers))
+    end
+  end
+
+  def test_write_lineno
+    File.unlink(@path)
+
+    FasterCSV.open(@path, "w") do |csv|
+      lines = 20
+      lines.times { csv << %w{a b c} }
+      assert_equal(lines, csv.lineno)
+    end
+  end
+
+  def test_write_hash
+    File.unlink(@path)
+
+    lines = [{:a => 1, :b => 2, :c => 3}, {:a => 4, :b => 5, :c => 6}]
+    FasterCSV.open( @path, "w", :headers           => true,
+                                :converters        => :all,
+                                :header_converters => :symbol ) do |csv|
+      csv << lines.first.keys
+      lines.each { |line| csv << line }
+    end
+    FasterCSV.open( @path, "w", :headers           => true,
+                                :converters        => :all,
+                                :header_converters => :symbol ) do |csv|
+      csv.each { |line| assert_equal(lines.shift, line.to_hash) }
+    end
   end
   
   def test_append  # aliased add_row() and puts()
