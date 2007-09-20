@@ -8,6 +8,8 @@ Below is a complete listing of changes for each revision of FasterCSV.
   endings in some (seemingly rare) Ruby environments.
 * Made FasterCSV::lineno() writer aware.
 * Support Hashes in FasterCSV#<<(), by detecting headers when writing.
+* Added limited support for switching the quote character.
+* Refining Data and DateTime matching for built-in convertors.
 
 == 1.2.0
 

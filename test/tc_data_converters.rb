@@ -45,7 +45,10 @@ class TestDataConverters < Test::Unit::TestCase
 
   def test_builtin_date_converter
     # does convert
-    assert_instance_of(Date, FasterCSV::Converters[:date][@win_safe_time_str])
+    assert_instance_of(
+      Date,
+      FasterCSV::Converters[:date][@win_safe_time_str.sub(/\d+:\d+:\d+ /, "")]
+    )
 
     # does not convert
     assert_instance_of(String, FasterCSV::Converters[:date]["junk"])

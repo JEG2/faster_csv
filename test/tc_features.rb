@@ -59,6 +59,14 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
                                         :row_sep => "\r\n") )
   end
   
+  def test_quote_char
+    TEST_CASES.each do |test_case|
+      assert_equal( test_case.last.map { |t| t.tr('"', "'") unless t.nil? },
+                    FasterCSV.parse_line( test_case.first.tr('"', "'"),
+                                          :quote_char => "'" ) )
+    end
+  end
+  
   def test_row_sep_auto_discovery
     ["\r\n", "\n", "\r"].each do |line_end|
       data       = "1,2,3#{line_end}4,5#{line_end}"

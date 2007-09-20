@@ -712,6 +712,13 @@ class FasterCSV
   # 
   FieldInfo = Struct.new(:index, :line, :header)
   
+  # A Regexp used to find and convert some common Date formats.
+  DateMatcher     = / \A(?: (\w+,?\s+)?\w+\s+\d{1,2},?\s+\d{2,4} |
+                            \d{4}-\d{2}-\d{2} )\z /x
+  # A Regexp used to find and convert some common DateTime formats.
+  DateTimeMatcher =
+    / \A(?: (\w+,?\s+)?\w+\s+\d{1,2}\s+\d{1,2}:\d{1,2}:\d{1,2},?\s+\d{2,4} |
+            \d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2} )\z /x
   # 
   # This Hash holds the built-in converters of FasterCSV that can be accessed by
   # name.  You can select Converters with FasterCSV.convert() or through the
@@ -732,12 +739,16 @@ class FasterCSV
   # To add a combo field, the value should be an Array of names.  Combo fields
   # can be nested with other combo fields.
   # 
-  Converters = { :integer   => lambda { |f| Integer(f)        rescue f },
-                 :float     => lambda { |f| Float(f)          rescue f },
-                 :numeric   => [:integer, :float],
-                 :date      => lambda { |f| Date.parse(f)     rescue f },
-                 :date_time => lambda { |f| DateTime.parse(f) rescue f },
-                 :all       => [:date_time, :numeric] }
+  Converters  = { :integer   => lambda { |f| Integer(f)        rescue f },
+                  :float     => lambda { |f| Float(f)          rescue f },
+                  :numeric   => [:integer, :float],
+                  :date      => lambda { |f|
+                    f =~ DateMatcher ? (Date.parse(f) rescue f) : f
+                  },
+                  :date_time => lambda { |f|
+                    f =~ DateTimeMatcher ? (DateTime.parse(f) rescue f) : f
+                  },
+                  :all       => [:date_time, :numeric] }
 
   # 
   # This Hash holds the built-in header converters of FasterCSV that can be
@@ -768,6 +779,7 @@ class FasterCSV
   # 
   # <b><tt>:col_sep</tt></b>::            <tt>","</tt>
   # <b><tt>:row_sep</tt></b>::            <tt>:auto</tt>
+  # <b><tt>:quote_char</tt></b>::         <tt>'"'</tt>
   # <b><tt>:converters</tt></b>::         +nil+
   # <b><tt>:unconverted_fields</tt></b>:: +nil+
   # <b><tt>:headers</tt></b>::            +false+
@@ -778,6 +790,7 @@ class FasterCSV
   # 
   DEFAULT_OPTIONS = { :col_sep            => ",",
                       :row_sep            => :auto,
+                      :quote_char         => '"', 
                       :converters         => nil,
                       :unconverted_fields => nil,
                       :headers            => false,
@@ -1267,6 +1280,12 @@ class FasterCSV
   #                                       (<tt>$/</tt>) is used.  Obviously,
   #                                       discovery takes a little time.  Set
   #                                       manually if speed is important.
+  # <b><tt>:quote_char</tt></b>::         The character used to quote fields.
+  #                                       This has to be a single character
+  #                                       String.  This is useful for
+  #                                       application that incorrectly use
+  #                                       <tt>'</tt> as the quote character
+  #                                       instead of the correct <tt>"</tt>.
   # <b><tt>:converters</tt></b>::         An Array of names from the Converters
   #                                       Hash and/or lambdas that handle custom
   #                                       conversion.  A single converter
@@ -1540,7 +1559,7 @@ class FasterCSV
             end
           end
         else                  # we found a quoted field...
-          $1.gsub('""', '"')  # unescape contents
+          $1.gsub(@quote_char * 2, @quote_char)  # unescape contents
         end
         ""  # gsub!'s replacement, clear the field
       end
@@ -1589,8 +1608,13 @@ class FasterCSV
   # 
   def init_separators(options)
     # store the selected separators
-    @col_sep = options.delete(:col_sep)
-    @row_sep = options.delete(:row_sep)
+    @col_sep    = options.delete(:col_sep)
+    @row_sep    = options.delete(:row_sep)
+    @quote_char = options.delete(:quote_char)
+
+    if @quote_char.length != 1
+      raise ArgumentError, ":quote_char has to be a single character String"
+    end
     
     # automatically discover row separator when requested
     if @row_sep == :auto
@@ -1627,8 +1651,13 @@ class FasterCSV
     end
     
     # establish quoting rules
+    do_quote = lambda do |field|
+      @quote_char                                      +
+      String(field).gsub(@quote_char, @quote_char * 2) +
+      @quote_char
+    end
     @quote = if options.delete(:force_quotes)
-      lambda { |field| %Q{"#{String(field).gsub('"', '""')}"} }
+      do_quote
     else
       lambda do |field|
         if field.nil?  # represent +nil+ fields as empty unquoted fields
@@ -1636,8 +1665,9 @@ class FasterCSV
         else
           field = String(field)  # Stringify fields
           # represent empty fields as empty quoted fields
-          if field.empty? or field.count(%Q{\r\n#{@col_sep}"}).nonzero?
-            %Q{"#{field.gsub('"', '""')}"}  # escape quoted fields
+          if field.empty? or
+             field.count("\r\n#{@col_sep}#{@quote_char}").nonzero?
+            do_quote.call(field)
           else
             field  # unquoted field
           end
@@ -1652,19 +1682,24 @@ class FasterCSV
     @skip_blanks = options.delete(:skip_blanks)
     
     # prebuild Regexps for faster parsing
+    esc_col_sep = Regexp.escape(@col_sep)
+    esc_row_sep = Regexp.escape(@row_sep)
+    esc_quote   = Regexp.escape(@quote_char)
     @parsers = {
       :leading_fields =>
-        /\A(?:#{Regexp.escape(@col_sep)})+/,     # for empty leading fields
+        /\A(?:#{esc_col_sep})+/,                 # for empty leading fields
       :csv_row        =>
         ### The Primary Parser ###
-        / \G(?:^|#{Regexp.escape(@col_sep)})     # anchor the match
-          (?: "((?>[^"]*)(?>""[^"]*)*)"          # find quoted fields
+        / \G(?:^|#{esc_col_sep})                 # anchor the match
+          (?: #{esc_quote}( (?>[^#{esc_quote}]*) # find quoted fields
+                            (?> #{esc_quote*2}
+                                [^#{esc_quote}]* )* )#{esc_quote}
               |                                  # ... or ...
-              ([^"#{Regexp.escape(@col_sep)}]*)  # unquoted fields
+              ([^#{esc_quote}#{esc_col_sep}]*)   # unquoted fields
               )/x,
         ### End Primary Parser ###
       :line_end       =>
-        /#{Regexp.escape(@row_sep)}\z/           # safer than chomp!()
+        /#{esc_row_sep}\z/                       # safer than chomp!()
     }
   end
   
