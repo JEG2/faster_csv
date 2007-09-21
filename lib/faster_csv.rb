@@ -1286,6 +1286,9 @@ class FasterCSV
   #                                       application that incorrectly use
   #                                       <tt>'</tt> as the quote character
   #                                       instead of the correct <tt>"</tt>.
+  #                                       FasterCSV will always consider a
+  #                                       double sequence this character to be
+  #                                       an escaped quote.
   # <b><tt>:converters</tt></b>::         An Array of names from the Converters
   #                                       Hash and/or lambdas that handle custom
   #                                       conversion.  A single converter
