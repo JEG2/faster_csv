@@ -75,7 +75,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.2.1".freeze
+  VERSION = "1.2.2".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -1646,7 +1646,14 @@ class FasterCSV
               break
             end
           end
-          @io.seek(saved_pos)  # reset back to the remembered position 
+          # tricky seek() clone to work around GzipReader's lack of seek()
+          @io.rewind
+          # reset back to the remembered position
+          while saved_pos > 1024  # avoid loading a lot of data into memory
+            @io.read(1024)
+            saved_pos -= 1024
+          end
+          @io.read(saved_pos) if saved_pos.nonzero?
         rescue IOError  # stream not opened for reading
           @row_sep = $INPUT_RECORD_SEPARATOR
         end

@@ -6,6 +6,7 @@
 #  Copyright 2005 Gray Productions. All rights reserved.
 
 require "test/unit"
+require "zlib"
 
 require "faster_csv"
 
@@ -143,6 +144,18 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
     END_DATA
     parsed = FasterCSV.parse(data, :col_sep => "<=>")
     assert_equal([[nil, nil, "A", "B", "C"], ["1", "2", "3"]], parsed)
+  end
+  
+  def test_gzip_reader_bug_fix
+    zipped = nil
+    assert_nothing_raised(NoMethodError) do
+      zipped = FasterCSV.new(
+                 Zlib::GzipReader.open(
+                   File.join(File.dirname(__FILE__), "line_endings.gz")
+                 )
+               )
+    end
+    assert_equal("\r\n", zipped.instance_eval { @row_sep })
   end
   
   def test_version

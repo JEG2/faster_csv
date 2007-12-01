@@ -4,6 +4,11 @@ Below is a complete listing of changes for each revision of FasterCSV.
 
 == 1.2.1
 
+* Worked around GzipReader's lack of a seek() method so we could still use
+  automatic row separator detection with them.
+  
+== 1.2.1
+
 * Worked around an odd incompatibility with the Regexps used to remove line
   endings in some (seemingly rare) Ruby environments.
 * Made FasterCSV::lineno() writer aware.
