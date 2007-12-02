@@ -158,6 +158,22 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
     assert_equal("\r\n", zipped.instance_eval { @row_sep })
   end
   
+  def test_gzip_writer_bug_fix
+    file   = File.join(File.dirname(__FILE__), "temp.gz")
+    zipped = nil
+    assert_nothing_raised(NoMethodError) do
+      zipped = FasterCSV.new(Zlib::GzipWriter.open(file))
+    end
+    zipped << %w[one two three]
+    zipped << [1, 2, 3]
+    zipped.close
+    
+    assert( Zlib::GzipReader.open(file) { |f| f.read }.
+                             include?($INPUT_RECORD_SEPARATOR),
+            "@row_sep did not default" )
+    File.unlink(file)
+  end
+  
   def test_version
     assert_not_nil(FasterCSV::VERSION)
     assert_instance_of(String, FasterCSV::VERSION)

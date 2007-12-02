@@ -75,7 +75,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.2.2".freeze
+  VERSION = "1.2.3".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -1621,7 +1621,8 @@ class FasterCSV
     
     # automatically discover row separator when requested
     if @row_sep == :auto
-      if [ARGF, STDIN, STDOUT, STDERR].include? @io
+      if [ARGF, STDIN, STDOUT, STDERR].include?(@io) or
+        (defined?(Zlib) and @io.class == Zlib::GzipWriter)
         @row_sep = $INPUT_RECORD_SEPARATOR
       else
         begin
