@@ -2,6 +2,10 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 1.2.4
+
+* Added encoding support patch from Michael Reinsch.
+  
 == 1.2.3
 
 * Default to the system line ending when passed a GzipWriter object to wrap.

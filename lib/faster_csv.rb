@@ -75,7 +75,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.2.3".freeze
+  VERSION = "1.2.4".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -1289,6 +1289,14 @@ class FasterCSV
   #                                       FasterCSV will always consider a
   #                                       double sequence this character to be
   #                                       an escaped quote.
+  # <b><tt>:encoding</tt></b>::           The encoding to use when parsing the
+  #                                       file. Defaults to your <tt>$KDOCE</tt>
+  #                                       setting. Valid values: <tt>`n’</tt> or
+  #                                       <tt>`N’</tt> for none, <tt>`e’</tt> or
+  #                                       <tt>`E’</tt> for EUC, <tt>`s’</tt> or
+  #                                       <tt>`S’</tt> for SJIS, and
+  #                                       <tt>`u’</tt> or <tt>`U’</tt> for UTF-8
+  #                                       (see Regexp.new()).
   # <b><tt>:converters</tt></b>::         An Array of names from the Converters
   #                                       Hash and/or lambdas that handle custom
   #                                       conversion.  A single converter
@@ -1691,26 +1699,27 @@ class FasterCSV
   def init_parsers(options)
     # store the parser behaviors
     @skip_blanks = options.delete(:skip_blanks)
-    
+    @encoding    = options.delete(:encoding)  # nil will use $KCODE
+
     # prebuild Regexps for faster parsing
     esc_col_sep = Regexp.escape(@col_sep)
     esc_row_sep = Regexp.escape(@row_sep)
     esc_quote   = Regexp.escape(@quote_char)
     @parsers = {
-      :leading_fields =>
-        /\A(?:#{esc_col_sep})+/,                 # for empty leading fields
-      :csv_row        =>
-        ### The Primary Parser ###
-        / \G(?:^|#{esc_col_sep})                 # anchor the match
-          (?: #{esc_quote}( (?>[^#{esc_quote}]*) # find quoted fields
-                            (?> #{esc_quote*2}
-                                [^#{esc_quote}]* )* )#{esc_quote}
-              |                                  # ... or ...
-              ([^#{esc_quote}#{esc_col_sep}]*)   # unquoted fields
-              )/x,
-        ### End Primary Parser ###
-      :line_end       =>
-        /#{esc_row_sep}\z/                       # safer than chomp!()
+      # for empty leading fields
+      :leading_fields => Regexp.new("\\A(?:#{esc_col_sep})+", nil, @encoding),
+      # The Primary Parser
+      :csv_row        => Regexp.new(<<-END_PARSER, Regexp::EXTENDED, @encoding),
+      \\G(?:^|#{esc_col_sep})                # anchor the match
+      (?: #{esc_quote}( (?>[^#{esc_quote}]*) # find quoted fields
+                        (?> #{esc_quote*2}
+                            [^#{esc_quote}]* )* )#{esc_quote}
+          |                                  # ... or ...
+          ([^#{esc_quote}#{esc_col_sep}]*)   # unquoted fields
+          )
+      END_PARSER
+      # safer than chomp!()
+      :line_end       => Regexp.new("#{esc_row_sep}\\z", nil, @encoding)
     }
   end
   
