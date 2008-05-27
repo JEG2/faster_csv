@@ -174,6 +174,35 @@ class TestFasterCSVFeatures < Test::Unit::TestCase
     File.unlink(file)
   end
   
+  def test_inspect_is_smart_about_io_types
+    str = FasterCSV.new("string,data").inspect
+    assert(str.include?("io_type:StringIO"), "IO type not detected.")
+
+    str = FasterCSV.new($stderr).inspect
+    assert(str.include?("io_type:$stderr"), "IO type not detected.")
+
+    str = FasterCSV.open( File.join( File.dirname(__FILE__),
+                                     "test_data.csv" ) ) { |csv| csv.inspect }
+    assert(str.include?("io_type:File"), "IO type not detected.")
+  end
+  
+  def test_inspect_shows_key_attributes
+    str = @csv.inspect
+    %w[lineno col_sep row_sep quote_char].each do |attr_name|
+      assert_match(/\b#{attr_name}:[^\s>]+/, str)
+    end
+  end
+  
+  def test_inspect_shows_headers_when_available
+    FasterCSV.open( File.join( File.dirname(__FILE__),
+                                     "test_data.csv" ),
+                    :headers => true ) do |csv|
+      assert(csv.inspect.include?("headers:true"), "Header hint not shown.")
+      csv.shift # load headers
+      assert_match(/headers:\[[^\]]+\]/, csv.inspect)
+    end
+  end
+  
   def test_version
     assert_not_nil(FasterCSV::VERSION)
     assert_instance_of(String, FasterCSV::VERSION)

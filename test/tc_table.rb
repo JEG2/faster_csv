@@ -388,4 +388,13 @@ class TestFasterCSVTable < Test::Unit::TestCase
     
     assert_equal(@rows.size, @table.size)
   end
+  
+  def test_inspect_shows_current_mode
+    str = @table.inspect
+    assert(str.include?("mode:#{@table.mode}"), "Mode not shown.")
+    
+    @table.by_col!
+    str = @table.inspect
+    assert(str.include?("mode:#{@table.mode}"), "Mode not shown.")
+  end
 end

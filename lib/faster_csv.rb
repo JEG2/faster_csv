@@ -363,6 +363,16 @@ class FasterCSV
       fields.to_csv(options)
     end
     alias_method :to_s, :to_csv
+    
+    # A summary of fields, by header.
+    def inspect
+      str = "#<#{self.class}"
+      each do |header, field|
+        str << " #{header.is_a?(Symbol) ? header.to_s : header.inspect}:" <<
+               field.inspect
+      end
+      str << ">"
+    end
   end
   
   # 
@@ -695,6 +705,10 @@ class FasterCSV
       end.join
     end
     alias_method :to_s, :to_csv
+    
+    def inspect
+      "#<#{self.class} mode:#{@mode} row_count:#{to_a.size}>"
+    end
   end
 
   # The error thrown when the parser encounters illegal CSV formatting.
@@ -1604,6 +1618,32 @@ class FasterCSV
   end
   alias_method :gets,     :shift
   alias_method :readline, :shift
+  
+  # Returns a simplified description of the key FasterCSV attributes.
+  def inspect
+    str = "<##{self.class} io_type:"
+    # show type of wrapped IO
+    if    @io == $stdout then str << "$stdout"
+    elsif @io == $stdin  then str << "$stdin"
+    elsif @io == $stderr then str << "$stderr"
+    else                      str << @io.class.to_s
+    end
+    # show IO.path(), if available
+    if @io.respond_to?(:path) and (p = @io.path)
+      str << " io_path:#{p.inspect}"
+    end
+    # show other attributes
+    %w[ lineno     col_sep     row_sep
+        quote_char skip_blanks encoding ].each do |attr_name|
+      if a = instance_variable_get("@#{attr_name}")
+        str << " #{attr_name}:#{a.inspect}"
+      end
+    end
+    if @use_headers
+      str << " headers:#{(@headers || true).inspect}"
+    end
+    str << ">"
+  end
   
   private
   

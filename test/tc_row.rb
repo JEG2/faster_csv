@@ -285,4 +285,21 @@ class TestFasterCSVRow < Test::Unit::TestCase
     
     assert_equal([@row.headers.size, @row.fields.size].max, @row.size)
   end
+  
+  def test_inspect_shows_header_field_pairs
+    str = @row.inspect
+    @row.each do |header, field|
+      assert( str.include?("#{header.inspect}:#{field.inspect}"),
+              "Header field pair not found." )
+    end
+  end
+  
+  def test_inspect_shows_symbol_headers_as_bare_attributes
+    str = FasterCSV::Row.new( @row.headers.map { |h| h.to_sym },
+                              @row.fields ).inspect
+    @row.each do |header, field|
+      assert( str.include?("#{header}:#{field.inspect}"),
+              "Header field pair not found." )
+    end
+  end
 end
