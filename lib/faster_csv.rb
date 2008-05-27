@@ -1412,12 +1412,17 @@ class FasterCSV
   # The data source must be open for writing.
   # 
   def <<(row)
+    # make sure headers have been assigned
+    if header_row? and [Array, String].include? @use_headers.class
+      @headers = @use_headers
+    end
+    
     # Handle FasterCSV::Row objects and Hashes
     row = case row
-      when self.class::Row then row.fields
-      when Hash            then @headers.map { |header| row[header] }
-      else                      row
-    end
+          when self.class::Row then row.fields
+          when Hash            then @headers.map { |header| row[header] }
+          else                      row
+          end
 
     @headers =  row if header_row?
     @lineno  += 1
@@ -1876,10 +1881,13 @@ class FasterCSV
   def parse_headers(row = nil)
     if @headers.nil?                # header row
       @headers = case @use_headers  # save headers
-      when Array  then @use_headers                         # Array of headers
-      when String then self.class.parse_line(@use_headers)  # CSV header String
-      else             row                                  # first row headers
-      end
+                    # Array of headers
+                    when Array  then @use_headers
+                    # CSV header String
+                    when String then self.class.parse_line(@use_headers)
+                    # first row is headers
+                    else             row
+                    end
       
       # prepare converted and unconverted copies
       row      = @headers                       if row.nil?

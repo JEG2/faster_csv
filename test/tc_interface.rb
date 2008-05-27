@@ -172,6 +172,31 @@ class TestFasterCSVInterface < Test::Unit::TestCase
       csv.each { |line| assert_equal(lines.shift, line.to_hash) }
     end
   end
+
+  def test_write_hash_with_headers_array
+    File.unlink(@path)
+
+    headers = [:b, :a, :c]
+    lines   = [{:a => 1, :b => 2, :c => 3}, {:a => 4, :b => 5, :c => 6}]
+
+    FasterCSV.open( @path, "w", :headers    => headers.dup,
+                                :converters => :all ) do |csv|
+      lines.each { |line| csv << line }
+    end
+
+    # test writing fields in the correct order
+    File.open(@path, "r") do |f|
+      file_lines = f.readlines.map { |s| s.chomp }
+      assert_equal("2,1,3", file_lines.shift)
+      assert_equal("5,4,6", file_lines.shift)
+    end
+
+    # test reading CSV with headers
+    FasterCSV.open( @path, "r", :headers    => headers.dup,
+                                :converters => :all ) do |csv|
+      csv.each { |line| assert_equal(lines.shift, line.to_hash) }
+    end
+  end
   
   def test_append  # aliased add_row() and puts()
     File.unlink(@path)

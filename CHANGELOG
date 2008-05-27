@@ -6,6 +6,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
 
 * Added encoding support patch from Michael Reinsch.
 * Improved inspect() messages for better IRb support.
+* Fixed header writing bug reported by Dov Murik.
   
 == 1.2.3
 
