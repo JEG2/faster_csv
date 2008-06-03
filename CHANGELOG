@@ -8,6 +8,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
 * Improved inspect() messages for better IRb support.
 * Fixed header writing bug reported by Dov Murik.
 * Use custom separators in parsing header Strings as suggested by Shmulik Regev.
+* Added a <tt>:write_headers</tt> option for outputting headers.
   
 == 1.2.3
 

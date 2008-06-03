@@ -1347,6 +1347,9 @@ class FasterCSV
   #                                       object with identical headers and
   #                                       fields (save that the fields do not go
   #                                       through the converters).
+  # <b><tt>:write_headers</tt></b>::      When +true+ and <tt>:headers</tt> is
+  #                                       set, a header row will be added to the
+  #                                       output.
   # <b><tt>:header_converters</tt></b>::  Identical in functionality to
   #                                       <tt>:converters</tt> save that the
   #                                       conversions are only made to header
@@ -1418,6 +1421,7 @@ class FasterCSV
     # make sure headers have been assigned
     if header_row? and [Array, String].include? @use_headers.class
       parse_headers  # won't read data for Array or String
+      self << @headers if @write_headers
     end
     
     # Handle FasterCSV::Row objects and Hashes
@@ -1814,6 +1818,7 @@ class FasterCSV
   def init_headers(options)
     @use_headers    = options.delete(:headers)
     @return_headers = options.delete(:return_headers)
+    @write_headers  = options.delete(:write_headers)
 
     # headers must be delayed until shift(), in case they need a row of content
     @headers = nil
