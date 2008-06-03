@@ -1417,7 +1417,7 @@ class FasterCSV
   def <<(row)
     # make sure headers have been assigned
     if header_row? and [Array, String].include? @use_headers.class
-      @headers = @use_headers
+      parse_headers  # won't read data for Array or String
     end
     
     # Handle FasterCSV::Row objects and Hashes
