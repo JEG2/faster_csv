@@ -1331,8 +1331,11 @@ class FasterCSV
   #                                       contents will be used as the headers.
   #                                       If set to a String, the String is run
   #                                       through a call of
-  #                                       FasterCSV::parse_line() to produce an
-  #                                       Array of headers.  This setting causes
+  #                                       FasterCSV::parse_line() with the same
+  #                                       <tt>:col_sep</tt>, <tt>:row_sep</tt>,
+  #                                       and <tt>:quote_char</tt> as this
+  #                                       instance to produce an Array of
+  #                                       headers.  This setting causes
   #                                       FasterCSV.shift() to return rows as
   #                                       FasterCSV::Row objects instead of
   #                                       Arrays and FasterCSV.read() to return
@@ -1881,13 +1884,17 @@ class FasterCSV
   def parse_headers(row = nil)
     if @headers.nil?                # header row
       @headers = case @use_headers  # save headers
-                    # Array of headers
-                    when Array  then @use_headers
-                    # CSV header String
-                    when String then self.class.parse_line(@use_headers)
-                    # first row is headers
-                    else             row
-                    end
+                 # Array of headers
+                 when Array  then @use_headers
+                 # CSV header String
+                 when String
+                   self.class.parse_line( @use_headers,
+                                          :col_sep    => @col_sep,
+                                          :row_sep    => @row_sep,
+                                          :quote_char => @quote_char )
+                 # first row is headers
+                 else             row
+                 end
       
       # prepare converted and unconverted copies
       row      = @headers                       if row.nil?

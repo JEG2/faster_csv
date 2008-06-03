@@ -130,6 +130,21 @@ class TestFasterCSVHeaders < Test::Unit::TestCase
     assert(!row.field_row?)
   end
   
+  def test_csv_header_string_inherits_separators
+    # parse with custom col_sep
+    csv = nil
+    assert_nothing_raised(Exception) do 
+      csv = FasterCSV.parse( @data.tr(",", "|"), :col_sep => "|",
+                                                 :headers => "my|new|headers" )
+    end
+
+    # verify headers were recognized
+    row = csv[0]
+    assert_not_nil(row)
+    assert_instance_of(FasterCSV::Row, row)
+    assert_equal([%w{my first}, %w{new second}, %w{headers third}], row.to_a)
+  end
+  
   def test_return_headers
     # activate headers and request they are returned
     csv = nil
