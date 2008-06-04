@@ -9,6 +9,10 @@ Below is a complete listing of changes for each revision of FasterCSV.
 * Fixed header writing bug reported by Dov Murik.
 * Use custom separators in parsing header Strings as suggested by Shmulik Regev.
 * Added a <tt>:write_headers</tt> option for outputting headers.
+* Handle open() calls in binary mode whenever we can to workaround a Windows
+  issue where line-ending translation can cause an off-by-one error in seeking
+  back to a non-zero starting position after auto-discovery for
+  <tt>:row_sep</tt> as suggested by Robert Battle.
   
 == 1.2.3
 

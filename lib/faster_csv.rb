@@ -1013,7 +1013,7 @@ class FasterCSV
   # The +options+ parameter can be anything FasterCSV::new() understands.
   # 
   def self.foreach(path, options = Hash.new, &block)
-    open(path, options) do |csv|
+    open(path, "rb", options) do |csv|
       csv.each(&block)
     end
   end
@@ -1134,8 +1134,8 @@ class FasterCSV
   
   # 
   # :call-seq:
-  #   open( filename, mode="r", options = Hash.new ) { |faster_csv| ... }
-  #   open( filename, mode="r", options = Hash.new )
+  #   open( filename, mode="rb", options = Hash.new ) { |faster_csv| ... }
+  #   open( filename, mode="rb", options = Hash.new )
   # 
   # This method opens an IO object, and wraps that with FasterCSV.  This is
   # intended as the primary interface for writing a CSV file.
@@ -1180,6 +1180,8 @@ class FasterCSV
   def self.open(*args)
     # find the +options+ Hash
     options = if args.last.is_a? Hash then args.pop else Hash.new end
+    # default to a binary open mode
+    args << "rb" if args.size == 1
     # wrap a File opened with the remaining +args+
     csv     = new(File.open(*args), options)
     
@@ -1236,7 +1238,7 @@ class FasterCSV
   # file and any +options+ FasterCSV::new() understands.
   # 
   def self.read(path, options = Hash.new)
-    open(path, options) { |csv| csv.read }
+    open(path, "rb", options) { |csv| csv.read }
   end
   
   # Alias for FasterCSV::read().
@@ -1293,7 +1295,14 @@ class FasterCSV
   #                                       <tt>$INPUT_RECORD_SEPARATOR</tt>
   #                                       (<tt>$/</tt>) is used.  Obviously,
   #                                       discovery takes a little time.  Set
-  #                                       manually if speed is important.
+  #                                       manually if speed is important.  Also
+  #                                       note that IO objects should be opened
+  #                                       in binary mode on Windows if this
+  #                                       feature will be used as the
+  #                                       line-ending translation can cause
+  #                                       problems with resetting the document
+  #                                       position to where it was before the
+  #                                       read ahead.
   # <b><tt>:quote_char</tt></b>::         The character used to quote fields.
   #                                       This has to be a single character
   #                                       String.  This is useful for
