@@ -15,6 +15,8 @@ Below is a complete listing of changes for each revision of FasterCSV.
   <tt>:row_sep</tt> as suggested by Robert Battle.
 * Improved the parser to fail faster when fed some forms of invalid CSV that can
   be detected without reading ahead.
+* Added a <tt>:field_size_limit</tt> option to control FasterCSV's lookahead and
+  prevent the parser from biting off more data than it can chew.
   
 == 1.2.3
 

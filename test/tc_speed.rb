@@ -40,16 +40,26 @@ class TestFasterCSVSpeed < Test::Unit::TestCase
   end
   
   def test_the_parse_fails_fast_when_it_can_for_unquoted_fields
-    data = 'valid,fields,bad start"' + BIG_DATA
-    assert_raise(FasterCSV::MalformedCSVError) do
-      Timeout.timeout(0.2) { FasterCSV.parse(data) }
-    end
+    assert_parse_errors_out('valid,fields,bad start"' + BIG_DATA)
   end
   
   def test_the_parse_fails_fast_when_it_can_for_unescaped_quotes
-    data = 'valid,fields,"bad start"unescaped' + BIG_DATA
+    assert_parse_errors_out('valid,fields,"bad start"unescaped' + BIG_DATA)
+  end
+  
+  def test_field_size_limit_controls_lookahead
+    assert_parse_errors_out( 'valid,fields,"' + BIG_DATA + '"',
+                             :field_size_limit => 2048 )
+  end
+  
+  private
+  
+  def assert_parse_errors_out(*args)
     assert_raise(FasterCSV::MalformedCSVError) do
-      Timeout.timeout(0.2) { FasterCSV.parse(data) }
+      Timeout.timeout(0.2) do
+        FasterCSV.parse(*args)
+        fail("Parse didn't error out")
+      end
     end
   end
 end

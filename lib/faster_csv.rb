@@ -1320,6 +1320,19 @@ class FasterCSV
   #                                       <tt>`S’</tt> for SJIS, and
   #                                       <tt>`u’</tt> or <tt>`U’</tt> for UTF-8
   #                                       (see Regexp.new()).
+  # <b><tt>:field_size_limit</tt></b>::   This is a maximum size FasterCSV will
+  #                                       read ahead looking for the closing
+  #                                       quote for a field.  (In truth, it
+  #                                       reads to the first line ending beyond
+  #                                       this size.)  If a quote cannot be
+  #                                       found within the limit FasterCSV will
+  #                                       raise a MalformedCSVError, assuming
+  #                                       the data is faulty.  You can use this
+  #                                       limit to prevent what are effectively
+  #                                       DoS attacks on the parser.  However,
+  #                                       this limit can cause a legitimate
+  #                                       parse to fail and thus is set to
+  #                                       +nil+, or off, by default.
   # <b><tt>:converters</tt></b>::         An Array of names from the Converters
   #                                       Hash and/or lambdas that handle custom
   #                                       conversion.  A single converter
@@ -1635,6 +1648,8 @@ class FasterCSV
         raise MalformedCSVError, "Unclosed quoted field on line #{lineno + 1}."
       elsif parse =~ @parsers[:bad_field]
         raise MalformedCSVError, "Illegal quoting on line #{lineno + 1}."
+      elsif @field_size_limit and parse.length >= @field_size_limit
+        raise MalformedCSVError, "Field size exceeded on line #{lineno + 1}."
       end
       # otherwise, we need to loop and pull some more data to complete the row
     end
@@ -1761,8 +1776,9 @@ class FasterCSV
   # Pre-compiles parsers and stores them by name for access during reads.
   def init_parsers(options)
     # store the parser behaviors
-    @skip_blanks = options.delete(:skip_blanks)
-    @encoding    = options.delete(:encoding)  # nil will use $KCODE
+    @skip_blanks      = options.delete(:skip_blanks)
+    @encoding         = options.delete(:encoding)  # nil will use $KCODE
+    @field_size_limit = options.delete(:field_size_limit)
 
     # prebuild Regexps for faster parsing
     esc_col_sep = Regexp.escape(@col_sep)
