@@ -75,7 +75,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.2.4".freeze
+  VERSION = "1.4.0".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -1556,7 +1556,7 @@ class FasterCSV
       # add another read to the line
       line  += @io.gets(@row_sep) rescue return nil
       # copy the line so we can chop it up in parsing
-      parse = line.dup
+      parse =  line.dup
       parse.sub!(@parsers[:line_end], "")
       
       # 
@@ -1631,7 +1631,7 @@ class FasterCSV
         break csv
       end
       # if we're not empty?() but at eof?(), a quoted field wasn't closed...
-      if @io.eof?
+      if @io.eof? or parse =~ @parsers[:bad_field]
         raise MalformedCSVError, "Unclosed quoted field on line #{lineno + 1}."
       end
       # otherwise, we need to loop and pull some more data to complete the row
@@ -1771,14 +1771,27 @@ class FasterCSV
       :leading_fields => Regexp.new("\\A(?:#{esc_col_sep})+", nil, @encoding),
       # The Primary Parser
       :csv_row        => Regexp.new(<<-END_PARSER, Regexp::EXTENDED, @encoding),
-      \\G(?:^|#{esc_col_sep})                # anchor the match
+      \\G(?:\\A|#{esc_col_sep})              # anchor the match
       (?: #{esc_quote}( (?>[^#{esc_quote}]*) # find quoted fields
                         (?> #{esc_quote*2}
                             [^#{esc_quote}]* )* )#{esc_quote}
           |                                  # ... or ...
           ([^#{esc_quote}#{esc_col_sep}]*)   # unquoted fields
           )
+      (?=#{esc_col_sep}|\\z)                 # ensure we are at field's end
       END_PARSER
+      # a test for unescaped quotes
+      :bad_field      => Regexp.new(<<-END_BAD, Regexp::EXTENDED, @encoding),
+      \\A#{esc_col_sep}?                    # starts with an optional comma
+      (?: #{esc_quote} (?>[^#{esc_quote}]*) # an extra quote
+                       (?> #{esc_quote*2}
+                           [^#{esc_quote}]* )*
+                       #{esc_quote}[^#{esc_quote}]
+          |                                 # ... or ...
+          [^#{esc_quote}#{esc_col_sep}]+
+          #{esc_quote}                      # unescaped quote
+          )
+      END_BAD
       # safer than chomp!()
       :line_end       => Regexp.new("#{esc_row_sep}\\z", nil, @encoding)
     }

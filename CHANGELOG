@@ -2,7 +2,7 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
-== 1.2.4
+== 1.4.0
 
 * Added encoding support patch from Michael Reinsch.
 * Improved inspect() messages for better IRb support.
@@ -13,6 +13,8 @@ Below is a complete listing of changes for each revision of FasterCSV.
   issue where line-ending translation can cause an off-by-one error in seeking
   back to a non-zero starting position after auto-discovery for
   <tt>:row_sep</tt> as suggested by Robert Battle.
+* Improved the parser to fail faster when fed some forms of invalid CSV that can
+  be detected without reading ahead.
   
 == 1.2.3
 
