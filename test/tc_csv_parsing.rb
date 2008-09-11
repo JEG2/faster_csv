@@ -158,7 +158,7 @@ class TestCSVParsing < Test::Unit::TestCase
         assert_send([csv.lineno, :<, 4])
       end
     rescue FasterCSV::MalformedCSVError
-      assert_equal("Unclosed quoted field on line 4.", $!.message)
+      assert_equal("Illegal quoting on line 4.", $!.message)
     end
   end
 end

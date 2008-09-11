@@ -1631,8 +1631,10 @@ class FasterCSV
         break csv
       end
       # if we're not empty?() but at eof?(), a quoted field wasn't closed...
-      if @io.eof? or parse =~ @parsers[:bad_field]
+      if @io.eof?
         raise MalformedCSVError, "Unclosed quoted field on line #{lineno + 1}."
+      elsif parse =~ @parsers[:bad_field]
+        raise MalformedCSVError, "Illegal quoting on line #{lineno + 1}."
       end
       # otherwise, we need to loop and pull some more data to complete the row
     end
