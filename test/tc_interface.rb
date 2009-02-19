@@ -103,6 +103,17 @@ class TestFasterCSVInterface < Test::Unit::TestCase
       assert_equal(nil, csv.shift)
     end
   end
+
+  def test_long_line # ruby's regex parser may have problems with long rows
+    File.unlink(@path)
+
+    long_field_length = 2800
+    File.open(@path, "w") do |file|
+      file << "1\t2\t#{'3' * long_field_length}\r\n"
+    end
+    @expected = [%w{1 2} + ['3' * long_field_length]]
+    test_shift
+  end
   
   ### Test Write Interface ###
 

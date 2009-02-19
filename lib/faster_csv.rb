@@ -1590,41 +1590,39 @@ class FasterCSV
         end
       end
 
-      # 
-      # shave leading empty fields if needed, because the main parser chokes 
-      # on these
-      # 
-      csv = if parse.sub!(@parsers[:leading_fields], "")
-        [nil] * ($&.length / @col_sep.length)
-      else
-        Array.new
-      end
-      # 
-      # then parse the main fields with a hyper-tuned Regexp from 
-      # Mastering Regular Expressions, Second Edition
-      # 
-      parse.gsub!(@parsers[:csv_row]) do
-        csv << if $1.nil?     # we found an unquoted field
-          if $2.empty?        # switch empty unquoted fields to +nil+...
-            nil               # for CSV compatibility
-          else
-            # I decided to take a strict approach to CSV parsing...
-            if $2.count("\r\n").zero?  # verify correctness of field...
-              $2
-            else
-              # or throw an Exception
-              raise MalformedCSVError, "Unquoted fields do not allow " +
-                                       "\\r or \\n (line #{lineno + 1})."
-            end
+      # parse the fields with a mix of String#split and regular expressions
+      csv                = Array.new
+      current_field      = String.new
+      field_quotes       = 0
+      quote_and_newlines = @quote_char + "\r\n"
+      parse.split(@col_sep, -1).each do |match|
+        current_field << match
+        if match.count(quote_and_newlines).zero?
+          csv           << (current_field.empty? ? nil : current_field)
+          current_field =  String.new
+        elsif current_field[0] == @quote_char[0]
+          field_quotes += match.count @quote_char
+          if field_quotes % 2 == 0
+            in_quotes = current_field[@parsers[:quoted_field], 1]
+            raise MalformedCSVError unless in_quotes
+            current_field = in_quotes
+            current_field.gsub!(@quote_char * 2, @quote_char) # unescape contents
+            csv           << current_field
+            current_field =  String.new
+            field_quotes  =  0
+          else # we found a quoted field that spans multiple lines
+            current_field << @col_sep
           end
-        else                  # we found a quoted field...
-          $1.gsub(@quote_char * 2, @quote_char)  # unescape contents
+        elsif match.count("\r\n").zero?
+          raise MalformedCSVError, "Illegal quoting on line #{lineno + 1}."
+        else
+          raise MalformedCSVError, "Unquoted fields do not allow " +
+                                   "\\r or \\n (line #{lineno + 1})."
         end
-        ""  # gsub!'s replacement, clear the field
       end
 
       # if parse is empty?(), we found all the fields on the line...
-      if parse.empty?
+      if field_quotes % 2 == 0
         @lineno += 1
 
         # save fields unconverted fields, if needed...
@@ -1646,9 +1644,7 @@ class FasterCSV
       # if we're not empty?() but at eof?(), a quoted field wasn't closed...
       if @io.eof?
         raise MalformedCSVError, "Unclosed quoted field on line #{lineno + 1}."
-      elsif parse =~ @parsers[:bad_field]
-        raise MalformedCSVError, "Illegal quoting on line #{lineno + 1}."
-      elsif @field_size_limit and parse.length >= @field_size_limit
+      elsif @field_size_limit and current_field.size >= @field_size_limit
         raise MalformedCSVError, "Field size exceeded on line #{lineno + 1}."
       end
       # otherwise, we need to loop and pull some more data to complete the row
@@ -1785,31 +1781,12 @@ class FasterCSV
     esc_row_sep = Regexp.escape(@row_sep)
     esc_quote   = Regexp.escape(@quote_char)
     @parsers = {
-      # for empty leading fields
-      :leading_fields => Regexp.new("\\A(?:#{esc_col_sep})+", nil, @encoding),
-      # The Primary Parser
-      :csv_row        => Regexp.new(<<-END_PARSER, Regexp::EXTENDED, @encoding),
-      \\G(?:\\A|#{esc_col_sep})              # anchor the match
-      (?: #{esc_quote}( (?>[^#{esc_quote}]*) # find quoted fields
-                        (?> #{esc_quote*2}
-                            [^#{esc_quote}]* )* )#{esc_quote}
-          |                                  # ... or ...
-          ([^#{esc_quote}#{esc_col_sep}]*)   # unquoted fields
-          )
-      (?=#{esc_col_sep}|\\z)                 # ensure we are at field's end
-      END_PARSER
-      # a test for unescaped quotes
-      :bad_field      => Regexp.new(<<-END_BAD, Regexp::EXTENDED, @encoding),
-      \\A#{esc_col_sep}?                    # starts with an optional comma
-      (?: #{esc_quote} (?>[^#{esc_quote}]*) # an extra quote
-                       (?> #{esc_quote*2}
-                           [^#{esc_quote}]* )*
-                       #{esc_quote}[^#{esc_quote}]
-          |                                 # ... or ...
-          [^#{esc_quote}#{esc_col_sep}]+
-          #{esc_quote}                      # unescaped quote
-          )
-      END_BAD
+      :any_field      => Regexp.new( "[^#{esc_col_sep}]+",
+                                     Regexp::MULTILINE,
+                                     @encoding ),
+      :quoted_field   => Regexp.new( "^#{esc_quote}(.*)#{esc_quote}$",
+                                     Regexp::MULTILINE,
+                                     @encoding ),
       # safer than chomp!()
       :line_end       => Regexp.new("#{esc_row_sep}\\z", nil, @encoding)
     }

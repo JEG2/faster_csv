@@ -12,8 +12,8 @@ task :default => [:test]
 
 Rake::TestTask.new do |test|
 	test.libs       << "test"
-	test.test_files = [ "test/ts_all.rb" ]
-	test.verbose    = true
+	test.test_files =  %w[test/ts_all.rb]
+	test.verbose    =  true
 end
 
 Rake::RDocTask.new do |rdoc|
@@ -45,8 +45,6 @@ task :benchmark do
   path = "test/test_data.csv"
 	sh %Q{time ruby -r csv -e } +
 	   %Q{'#{TESTS}.times { CSV.foreach("#{path}") { |row| } }'}
-	sh %Q{time ruby -r lightcsv -e } +
-	   %Q{'#{TESTS}.times { LightCsv.foreach("#{path}") { |row| } }'}
 	sh %Q{time ruby -r lib/faster_csv -e } +
 	   %Q{'#{TESTS}.times { FasterCSV.foreach("#{path}") { |row| } }'}
 end
@@ -58,7 +56,7 @@ spec = Gem::Specification.new do |spec|
 	spec.platform = Gem::Platform::RUBY
 	spec.summary  = "FasterCSV is CSV, but faster, smaller, and cleaner."
 
-	spec.test_suite_file = "test/ts_all.rb"
+	spec.test_files      = %w[test/ts_all.rb]
 	spec.files           = Dir.glob("{lib,test,examples}/**/*.rb").
 	                           reject { |item| item.include?(".svn") } +
 	                       Dir.glob("{test,examples}/**/*.csv").
