@@ -7,6 +7,13 @@
 # 
 # See FasterCSV for documentation.
 
+if RUBY_VERSION >= "1.9"
+  abort <<-VERSION_WARNING.gsub(/^\s+/, "")
+  Please switch to Ruby 1.9's standard CSV library.  It's FasterCSV plus
+  support for Ruby 1.9's m17n encoding engine.
+  VERSION_WARNING
+end
+
 require "forwardable"
 require "English"
 require "enumerator"
@@ -1567,7 +1574,11 @@ class FasterCSV
     # 
     loop do
       # add another read to the line
-      line  += @io.gets(@row_sep) rescue return nil
+      begin
+        line  += @io.gets(@row_sep)
+      rescue
+        return nil
+      end
       # copy the line so we can chop it up in parsing
       parse =  line.dup
       parse.sub!(@parsers[:line_end], "")
