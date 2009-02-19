@@ -82,7 +82,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.4.0".freeze
+  VERSION = "1.5.0".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
