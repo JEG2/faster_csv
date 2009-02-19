@@ -1566,7 +1566,7 @@ class FasterCSV
     end
     
     # begin with a blank line, so we can always add to it
-    line = ""
+    line = String.new
 
     # 
     # it can take multiple calls to <tt>@io.gets()</tt> to get a full line,
@@ -1602,17 +1602,16 @@ class FasterCSV
       end
 
       # parse the fields with a mix of String#split and regular expressions
-      csv                = Array.new
-      current_field      = String.new
-      field_quotes       = 0
-      quote_and_newlines = @quote_char + "\r\n"
+      csv           = Array.new
+      current_field = String.new
+      field_quotes  = 0
       parse.split(@col_sep, -1).each do |match|
         current_field << match
-        if match.count(quote_and_newlines).zero?
+        if match.count(@quote_and_newlines).zero?
           csv           << (current_field.empty? ? nil : current_field)
           current_field =  String.new
         elsif current_field[0] == @quote_char[0]
-          field_quotes += match.count @quote_char
+          field_quotes += match.count(@quote_char)
           if field_quotes % 2 == 0
             in_quotes = current_field[@parsers[:quoted_field], 1]
             raise MalformedCSVError unless in_quotes
@@ -1704,9 +1703,10 @@ class FasterCSV
   # 
   def init_separators(options)
     # store the selected separators
-    @col_sep    = options.delete(:col_sep)
-    @row_sep    = options.delete(:row_sep)
-    @quote_char = options.delete(:quote_char)
+    @col_sep            = options.delete(:col_sep)
+    @row_sep            = options.delete(:row_sep)
+    @quote_char         = options.delete(:quote_char)
+    @quote_and_newlines = "#{@quote_char}\r\n"
 
     if @quote_char.length != 1
       raise ArgumentError, ":quote_char has to be a single character String"
