@@ -5,8 +5,8 @@ Below is a complete listing of changes for each revision of FasterCSV.
 == 1.5.0
 
 * The main parser has been rewritten by Timothy Elliott to avoid big input
-  issues with Ruby 1.8's regex engine.  It's a hair slower (still leagues faster
-  than CSV though), but now handles many more inputs gracefully.
+  issues with Ruby 1.8's regex engine.  This makes FasterCSV handle more inputs
+  gracefully.
 * FasterCSV will now exit with a notice to upgrade if required in Ruby 1.9.
 
 == 1.4.0

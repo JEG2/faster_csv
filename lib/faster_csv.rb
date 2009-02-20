@@ -1606,11 +1606,10 @@ class FasterCSV
       current_field = String.new
       field_quotes  = 0
       parse.split(@col_sep, -1).each do |match|
-        current_field << match
-        if match.count(@quote_and_newlines).zero?
-          csv           << (current_field.empty? ? nil : current_field)
-          current_field =  String.new
-        elsif current_field[0] == @quote_char[0]
+        if current_field.empty? && match.count(@quote_and_newlines).zero?
+          csv           << (match.empty? ? nil : match)
+        elsif(current_field.empty? ? match[0] : current_field[0]) == @quote_char[0]
+          current_field << match
           field_quotes += match.count(@quote_char)
           if field_quotes % 2 == 0
             in_quotes = current_field[@parsers[:quoted_field], 1]

@@ -108,6 +108,13 @@ class TestCSVParsing < Test::Unit::TestCase
     # 
     assert_equal(Array.new, FasterCSV.parse_line("\n1,2,3\n"))
   end
+
+  def test_non_regex_edge_cases
+    # An early version of the non-regex parser fails this test
+    [["foo,\"foo,bar,baz,foo\",\"foo\"", ["foo", "foo,bar,baz,foo", "foo"]]].each do |edge_case|
+      assert_equal(edge_case.last, FasterCSV.parse_line(edge_case.first))
+    end
+  end
   
   def test_malformed_csv
     assert_raise(FasterCSV::MalformedCSVError) do
