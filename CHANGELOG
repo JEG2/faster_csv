@@ -8,6 +8,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
   issues with Ruby 1.8's regex engine.  This makes FasterCSV handle more inputs
   gracefully.
 * FasterCSV will now exit with a notice to upgrade if required in Ruby 1.9.
+* Included a missing file so the tests will run in source packages.
 
 == 1.4.0
 
