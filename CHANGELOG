@@ -2,6 +2,10 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 1.5.1
+
+* A bug fix for deleting blank Table rows from Andy Hartford.
+
 == 1.5.0
 
 * The main parser has been rewritten by Timothy Elliott to avoid big input
