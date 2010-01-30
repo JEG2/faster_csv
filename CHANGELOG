@@ -5,6 +5,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
 == 1.5.1
 
 * A bug fix for deleting blank Table rows from Andy Hartford.
+* Added gem build instructions.
 
 == 1.5.0
 
