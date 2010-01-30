@@ -72,6 +72,11 @@ class TestFasterCSVInterface < Test::Unit::TestCase
     assert_equal(%w{1 2 3}, row)
   end
   
+  def test_parse_line_with_empty_lines
+    assert_equal(nil,       FasterCSV.parse_line(""))  # to signal eof
+    assert_equal(Array.new, FasterCSV.parse_line("\n1,2,3"))
+  end
+  
   def test_read_and_readlines
     assert_equal( @expected,
                   FasterCSV.read(@path, :col_sep => "\t", :row_sep => "\r\n") )
