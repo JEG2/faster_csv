@@ -181,7 +181,7 @@ class TestFasterCSVInterface < Test::Unit::TestCase
       csv << lines.first.keys
       lines.each { |line| csv << line }
     end
-    FasterCSV.open( @path, "w", :headers           => true,
+    FasterCSV.open( @path, "r", :headers           => true,
                                 :converters        => :all,
                                 :header_converters => :symbol ) do |csv|
       csv.each { |line| assert_equal(lines.shift, line.to_hash) }

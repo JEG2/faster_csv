@@ -82,7 +82,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.5.1".freeze
+  VERSION = "1.5.2".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -1576,10 +1576,10 @@ class FasterCSV
     # 
     loop do
       # add another read to the line
-      begin
-        line  += @io.gets(@row_sep)
-      rescue
-        return nil
+      if read_line = @io.gets(@row_sep)
+       line += read_line
+      else
+       return nil
       end
       # copy the line so we can chop it up in parsing
       parse =  line.dup

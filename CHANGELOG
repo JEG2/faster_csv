@@ -2,6 +2,10 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 1.5.2
+
+* A bug fix to allow IO Exceptions to reach the calling code from Moses Hohman.
+
 == 1.5.1
 
 * A bug fix for deleting blank Table rows from Andy Hartford.
