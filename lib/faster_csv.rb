@@ -704,8 +704,12 @@ class FasterCSV
     # Returns the table as a complete CSV String.  Headers will be listed first,
     # then all of the field rows.
     # 
+    # This method assumes you want the Table.headers(), unless you explicitly
+    # pass <tt>:write_headers => false</tt>.
+    # 
     def to_csv(options = Hash.new)
-      @table.inject([headers.to_csv(options)]) do |rows, row|
+      wh = options.fetch(:write_headers, true)
+      @table.inject(wh ? [headers.to_csv(options)] : [ ]) do |rows, row|
         if row.header_row?
           rows
         else

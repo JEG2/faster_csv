@@ -5,6 +5,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
 == 1.5.2
 
 * A bug fix to allow IO Exceptions to reach the calling code from Moses Hohman.
+* Added support for <tt>:write_headers => false</tt> to Table.to_csv().
 
 == 1.5.1
 
