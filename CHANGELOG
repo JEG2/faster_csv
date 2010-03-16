@@ -2,6 +2,11 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 1.5.3
+
+* A bug fix from Timothy Elliott to return the new parser to its strict quote
+  tolerance.
+
 == 1.5.2
 
 * A bug fix to allow IO Exceptions to reach the calling code from Moses Hohman.

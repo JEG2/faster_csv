@@ -114,6 +114,10 @@ class TestCSVParsing < Test::Unit::TestCase
     [["foo,\"foo,bar,baz,foo\",\"foo\"", ["foo", "foo,bar,baz,foo", "foo"]]].each do |edge_case|
       assert_equal(edge_case.last, FasterCSV.parse_line(edge_case.first))
     end
+
+    assert_raise(FasterCSV::MalformedCSVError) do
+      FasterCSV.parse_line("1,\"23\"4\"5\", 6")
+    end
   end
   
   def test_malformed_csv

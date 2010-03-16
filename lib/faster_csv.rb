@@ -82,7 +82,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.5.2".freeze
+  VERSION = "1.5.3".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -1614,12 +1614,14 @@ class FasterCSV
       parse.split(@col_sep, -1).each do |match|
         if current_field.empty? && match.count(@quote_and_newlines).zero?
           csv           << (match.empty? ? nil : match)
-        elsif(current_field.empty? ? match[0] : current_field[0]) == @quote_char[0]
+        elsif (current_field.empty? ? match[0] : current_field[0]) ==
+              @quote_char[0]
           current_field << match
           field_quotes += match.count(@quote_char)
           if field_quotes % 2 == 0
             in_quotes = current_field[@parsers[:quoted_field], 1]
-            raise MalformedCSVError unless in_quotes
+            raise MalformedCSVError if !in_quotes ||
+                                       in_quotes[@parsers[:stray_quote]]
             current_field = in_quotes
             current_field.gsub!(@quote_char * 2, @quote_char) # unescape contents
             csv           << current_field
@@ -1797,14 +1799,17 @@ class FasterCSV
     esc_row_sep = Regexp.escape(@row_sep)
     esc_quote   = Regexp.escape(@quote_char)
     @parsers = {
-      :any_field      => Regexp.new( "[^#{esc_col_sep}]+",
-                                     Regexp::MULTILINE,
-                                     @encoding ),
-      :quoted_field   => Regexp.new( "^#{esc_quote}(.*)#{esc_quote}$",
-                                     Regexp::MULTILINE,
-                                     @encoding ),
+      :any_field    => Regexp.new( "[^#{esc_col_sep}]+",
+                                   Regexp::MULTILINE,
+                                   @encoding ),
+      :quoted_field => Regexp.new( "^#{esc_quote}(.*)#{esc_quote}$",
+                                   Regexp::MULTILINE,
+                                   @encoding ),
+      :stray_quote  => Regexp.new( "[^#{esc_quote}]#{esc_quote}[^#{esc_quote}]",
+                                   Regexp::MULTILINE,
+                                   @encoding ),
       # safer than chomp!()
-      :line_end       => Regexp.new("#{esc_row_sep}\\z", nil, @encoding)
+      :line_end     => Regexp.new("#{esc_row_sep}\\z", nil, @encoding)
     }
   end
   
