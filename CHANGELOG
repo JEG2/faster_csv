@@ -2,6 +2,10 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
+== 1.5.4
+
+* Improved test coverage for the parser.
+
 == 1.5.3
 
 * A bug fix from Timothy Elliott to return the new parser to its strict quote
