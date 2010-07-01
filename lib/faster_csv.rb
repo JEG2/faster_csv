@@ -79,6 +79,14 @@ require "stringio"
 #   FCSV             { |csv_out| csv_out << %w{my data here} }  # to $stdout
 #   FCSV(csv = "")   { |csv_str| csv_str << %w{my data here} }  # to a String
 #   FCSV($stderr)    { |csv_err| csv_err << %w{my data here} }  # to $stderr
+#   FCSV($stdin)     { |csv_in|  csv_in.each { |row| p row } }  # from $stdin
+# 
+# == Advanced Usage
+# 
+# === Wrap an IO Object
+# 
+#   csv = FCSV.new(io, options)
+#   # ... read (with gets() or each()) from and write (with <<) to csv here ...
 # 
 class FasterCSV
   # The version of the installed library.
