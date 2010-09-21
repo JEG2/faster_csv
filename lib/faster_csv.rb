@@ -90,7 +90,7 @@ require "stringio"
 # 
 class FasterCSV
   # The version of the installed library.
-  VERSION = "1.5.4".freeze
+  VERSION = "1.5.5".freeze
   
   # 
   # A FasterCSV::Row is part Array and part Hash.  It retains an order for the
@@ -1721,7 +1721,7 @@ class FasterCSV
     @col_sep            = options.delete(:col_sep)
     @row_sep            = options.delete(:row_sep)
     @quote_char         = options.delete(:quote_char)
-    @quote_and_newlines = "#{@quote_char}\r\n"
+    @quote_and_newlines = "\r\n#{@quote_char}"
 
     if @quote_char.length != 1
       raise ArgumentError, ":quote_char has to be a single character String"
