@@ -2,14 +2,12 @@
 
 Below is a complete listing of changes for each revision of FasterCSV.
 
-== 1.5.5
-
-* Fixed a bug that prevented <tt>^</tt> from being used as <tt>:quote_char</tt>.
-
 == 1.5.4
 
 * Improved test coverage for the parser.
 * Improved documentation.
+* Fixed a bug that prevented <tt>^</tt> from being used as <tt>:quote_char</tt>.
+* Switched from abort() to throwing exceptions on Ruby 1.9.
 
 == 1.5.3
 
