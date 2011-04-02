@@ -1402,6 +1402,10 @@ else
     #                                       through the converters).
     # <b><tt>:write_headers</tt></b>::      When +true+ and <tt>:headers</tt> is
     #                                       set, a header row will be added to the
+    #                                       output. Note that if the table only
+    #                                       contains header rows,
+    #                                       <tt>:return_headers</tt> must also be
+    #                                       set in order for a header row to be
     #                                       output.
     # <b><tt>:header_converters</tt></b>::  Identical in functionality to
     #                                       <tt>:converters</tt> save that the
