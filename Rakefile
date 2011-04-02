@@ -61,7 +61,7 @@ spec = Gem::Specification.new do |spec|
 	                           reject { |item| item.include?(".svn") } +
 	                       Dir.glob("{test,examples}/**/*.csv").
 	                           reject { |item| item.include?(".svn") } +
-	                       %w[Rakefile setup.rb test/line_endings.gz]
+	                       %w[Rakefile test/line_endings.gz]
 
 	spec.has_rdoc         = true
 	spec.extra_rdoc_files = %w[ AUTHORS COPYING README INSTALL TODO CHANGELOG
