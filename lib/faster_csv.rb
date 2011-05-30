@@ -1318,9 +1318,7 @@ else
     #                                       even if it occurs in a quoted field,
     #                                       assuming that you would have the same
     #                                       line endings there.  If none of those
-    #                                       sequences is found, +data+ is
-    #                                       <tt>ARGF</tt>, <tt>STDIN</tt>,
-    #                                       <tt>STDOUT</tt>, or <tt>STDERR</tt>,
+    #                                       sequences is found, 
     #                                       or the stream is only available for
     #                                       output, the default
     #                                       <tt>$INPUT_RECORD_SEPARATOR</tt>
@@ -1745,8 +1743,7 @@ else
 
       # automatically discover row separator when requested
       if @row_sep == :auto
-        if [ARGF, STDIN, STDOUT, STDERR].include?(@io) or
-          (defined?(Zlib) and @io.class == Zlib::GzipWriter)
+        if !@io.respond_to?(:eof?) or (@io.eof? rescue true) # we can't auto-discover for STDOUT, STDERR, Zlib::GzipWriter streems, etc
           @row_sep = $INPUT_RECORD_SEPARATOR
         else
           begin
