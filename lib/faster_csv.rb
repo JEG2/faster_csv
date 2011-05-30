@@ -1743,7 +1743,7 @@ else
 
       # automatically discover row separator when requested
       if @row_sep == :auto
-        if !@io.respond_to?(:eof?) or (@io.eof? rescue true) # we can't auto-discover for STDOUT, STDERR, Zlib::GzipWriter streems, etc
+        if !@io.respond_to?(:pos) or !@io.respond_to?(:eof?) or (@io.eof? rescue true) # we can't auto-discover for STDOUT, STDERR, Zlib::GzipWriter streems, etc
           @row_sep = $INPUT_RECORD_SEPARATOR
         else
           begin
