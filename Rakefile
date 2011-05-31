@@ -20,6 +20,7 @@ Rake::RDocTask.new do |rdoc|
 	rdoc.main     = "README"
 	rdoc.rdoc_dir = "doc/html"
 	rdoc.title    = "FasterCSV Documentation"
+	rdoc.options  = %w[--charset utf-8]
 	rdoc.rdoc_files.include( "README",  "INSTALL",
 	                         "TODO",    "CHANGELOG",
 	                         "AUTHORS", "COPYING",
