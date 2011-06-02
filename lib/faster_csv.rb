@@ -1744,9 +1744,17 @@ else
       # automatically discover row separator when requested
       if @row_sep == :auto
         begin
-          saved_pos = @io.pos  # remember where we were (@io.pos will raise an axception if @io is pipe or not opened for reading)
+          #
+          # remember where we were (pos() will raise an axception if @io is pipe
+          # or not opened for reading)
+          #
+          saved_pos = @io.pos
           while @row_sep == :auto
-            break  if @io.eof?  # if we run out of data, it's probably a single line - ensure block will set default value
+            #
+            # if we run out of data, it's probably a single line
+            # (ensure will set default value)
+            #
+            break if @io.eof?
 
             # read ahead a bit
             sample =  @io.read(1024)
@@ -1767,13 +1775,18 @@ else
             saved_pos -= 1024
           end
           @io.read(saved_pos) if saved_pos.nonzero?
-
-        rescue IOError # not opened for reading
-        rescue NoMethodError # Zlib::GzipWriter streem doesn't have eof? method
+        rescue IOError         # not opened for reading
+          # do nothing:  ensure will set default
+        rescue NoMethodError   # Zlib::GzipWriter doesn't have eof?
+          # do nothing:  ensure will set default
         rescue SystemCallError # pipe
-
-        ensure  # stream not opened for reading, or pipe, or single-line data
-          @row_sep = $INPUT_RECORD_SEPARATOR  if @row_sep == :auto
+          # do nothing:  ensure will set default
+        ensure
+          #
+          # set default if we failed to detect
+          # (stream not opened for reading, a pipe, or a single line of data)
+          #
+          @row_sep = $INPUT_RECORD_SEPARATOR if @row_sep == :auto
         end
       end
 
