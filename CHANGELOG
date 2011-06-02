@@ -6,7 +6,7 @@ Below is a complete listing of changes for each revision of FasterCSV.
 
 * Removed setup.rb due to licensing concerns.
 * Improved stray quoting error message (patch by Edvard Majakari).
-* Improved line ending detection algorithm (patch by Alexey).
+* Improved line ending detection algorithm (patch by Alexey Smolianinov).
 
 == 1.5.4
 
