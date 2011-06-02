@@ -1743,42 +1743,37 @@ else
 
       # automatically discover row separator when requested
       if @row_sep == :auto
-        if !@io.respond_to?(:pos) or !@io.respond_to?(:eof?) or (@io.eof? rescue true) # we can't auto-discover for STDOUT, STDERR, Zlib::GzipWriter streems, etc
-          @row_sep = $INPUT_RECORD_SEPARATOR
-        else
-          begin
-            saved_pos = @io.pos  # remember where we were
-            while @row_sep == :auto
-              # 
-              # if we run out of data, it's probably a single line 
-              # (use a sensible default)
-              # 
-              if @io.eof?
-                @row_sep = $INPUT_RECORD_SEPARATOR
-                break
-              end
+        begin
+          saved_pos = @io.pos  # remember where we were (@io.pos will raise an axception if @io is pipe or not opened for reading)
+          while @row_sep == :auto
+            break  if @io.eof?  # if we run out of data, it's probably a single line - ensure block will set default value
 
-              # read ahead a bit
-              sample =  @io.read(1024)
-              sample += @io.read(1) if sample[-1..-1] == "\r" and not @io.eof?
+            # read ahead a bit
+            sample =  @io.read(1024)
+            sample += @io.read(1) if sample[-1..-1] == "\r" and not @io.eof?
 
-              # try to find a standard separator
-              if sample =~ /\r\n?|\n/
-                @row_sep = $&
-                break
-              end
+            # try to find a standard separator
+            if sample =~ /\r\n?|\n/
+              @row_sep = $&
+              break
             end
-            # tricky seek() clone to work around GzipReader's lack of seek()
-            @io.rewind
-            # reset back to the remembered position
-            while saved_pos > 1024  # avoid loading a lot of data into memory
-              @io.read(1024)
-              saved_pos -= 1024
-            end
-            @io.read(saved_pos) if saved_pos.nonzero?
-          rescue IOError  # stream not opened for reading
-            @row_sep = $INPUT_RECORD_SEPARATOR
           end
+
+          # tricky seek() clone to work around GzipReader's lack of seek()
+          @io.rewind
+          # reset back to the remembered position
+          while saved_pos > 1024  # avoid loading a lot of data into memory
+            @io.read(1024)
+            saved_pos -= 1024
+          end
+          @io.read(saved_pos) if saved_pos.nonzero?
+
+        rescue IOError # not opened for reading
+        rescue NoMethodError # Zlib::GzipWriter streem doesn't have eof? method
+        rescue SystemCallError # pipe
+
+        ensure  # stream not opened for reading, or pipe, or single-line data
+          @row_sep = $INPUT_RECORD_SEPARATOR  if @row_sep == :auto
         end
       end
 
