@@ -1342,7 +1342,7 @@ else
     #                                       double sequence this character to be
     #                                       an escaped quote.
     # <b><tt>:encoding</tt></b>::           The encoding to use when parsing the
-    #                                       file. Defaults to your <tt>$KDOCE</tt>
+    #                                       file. Defaults to your <tt>$KCODE</tt>
     #                                       setting. Valid values: <tt>`n’</tt> or
     #                                       <tt>`N’</tt> for none, <tt>`e’</tt> or
     #                                       <tt>`E’</tt> for EUC, <tt>`s’</tt> or
