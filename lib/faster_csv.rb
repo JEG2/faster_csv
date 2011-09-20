@@ -1258,7 +1258,7 @@ else
     # a into an Array.  Note that if +line+ contains multiple rows, anything 
     # beyond the first row is ignored.
     # 
-    # The +options+ parameter can be anthing FasterCSV::new() understands.
+    # The +options+ parameter can be anything FasterCSV::new() understands.
     # 
     def self.parse_line(line, options = Hash.new)
       new(line, options).shift
