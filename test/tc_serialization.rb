@@ -3,7 +3,7 @@
 # tc_serialization.rb
 #
 #  Created by James Edward Gray II on 2006-03-28.
-#  Copyright 2006 Gray Productions. All rights reserved.
+#  Copyright 2012 Gray Productions. All rights reserved.
 
 require "test/unit"
 

@@ -3,7 +3,7 @@
 # tc_encodings.rb
 #
 #  Created by Michael Reinsch.
-#  Copyright (c) 2008 Ubiquitous Business Technology, Inc.
+#  Copyright (c) 2012 Ubiquitous Business Technology, Inc.
 
 require "test/unit"
 

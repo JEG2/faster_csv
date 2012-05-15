@@ -3,7 +3,7 @@
 # tc_features.rb
 #
 #  Created by James Edward Gray II on 2005-11-14.
-#  Copyright 2005 Gray Productions. All rights reserved.
+#  Copyright 2012 Gray Productions. All rights reserved.
 
 require "test/unit"
 require "zlib"
