@@ -1258,7 +1258,7 @@ else
     # a into an Array.  Note that if +line+ contains multiple rows, anything 
     # beyond the first row is ignored.
     # 
-    # The +options+ parameter can be anthing FasterCSV::new() understands.
+    # The +options+ parameter can be anything FasterCSV::new() understands.
     # 
     def self.parse_line(line, options = Hash.new)
       new(line, options).shift
@@ -1297,7 +1297,7 @@ else
     # list.)  If you pass a String for +data+, you can later retrieve it (after
     # writing to it, for example) with FasterCSV.string().
     # 
-    # Note that a wrapped String will be positioned at at the beginning (for 
+    # Note that a wrapped String will be positioned at the beginning (for 
     # reading).  If you want it at the end (for writing), use 
     # FasterCSV::generate().  If you want any other positioning, pass a preset 
     # StringIO object instead.
@@ -1342,7 +1342,7 @@ else
     #                                       double sequence this character to be
     #                                       an escaped quote.
     # <b><tt>:encoding</tt></b>::           The encoding to use when parsing the
-    #                                       file. Defaults to your <tt>$KDOCE</tt>
+    #                                       file. Defaults to your <tt>$KCODE</tt>
     #                                       setting. Valid values: <tt>`n’</tt> or
     #                                       <tt>`N’</tt> for none, <tt>`e’</tt> or
     #                                       <tt>`E’</tt> for EUC, <tt>`s’</tt> or
