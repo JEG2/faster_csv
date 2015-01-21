@@ -17,11 +17,11 @@ Rake::TestTask.new do |test|
 end
 
 Rake::RDocTask.new do |rdoc|
-	rdoc.main     = "README"
+	rdoc.main     = "README.rdoc"
 	rdoc.rdoc_dir = "doc/html"
 	rdoc.title    = "FasterCSV Documentation"
 	rdoc.options  = %w[--charset utf-8]
-	rdoc.rdoc_files.include( "README",  "INSTALL",
+	rdoc.rdoc_files.include( "README.rdoc",  "INSTALL",
 	                         "TODO",    "CHANGELOG",
 	                         "AUTHORS", "COPYING",
 	                         "LICENSE", "lib/" )
@@ -65,10 +65,10 @@ spec = Gem::Specification.new do |spec|
 	                       %w[Rakefile test/line_endings.gz]
 
 	spec.has_rdoc         = true
-	spec.extra_rdoc_files = %w[ AUTHORS COPYING README INSTALL TODO CHANGELOG
+	spec.extra_rdoc_files = %w[ AUTHORS COPYING README.rdoc INSTALL TODO CHANGELOG
 	                            LICENSE ]
 	spec.rdoc_options     << "--title" << "FasterCSV Documentation" <<
-	                         "--main"  << "README"
+	                         "--main"  << "README.rdoc"
 
 	spec.require_path = "lib"
 
